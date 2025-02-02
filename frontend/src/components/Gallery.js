@@ -125,7 +125,7 @@ const Gallery = () => {
               onClick={() => handleSelectImage(image)}
             >
               <img
-                src={`${API_URL}${image.path}`}
+                src={`${IMAGE_URL}${image.path}`}
                 alt={image.original_name || image.filename}
                 className="gallery-thumbnail-img"
               />
