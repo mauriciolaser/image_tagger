@@ -1,0 +1,103 @@
+/* gallery.css */
+
+/* Contenedor principal */
+.gallery-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Barra de búsqueda */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .search-bar input {
+    flex: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .search-bar button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  /* Vista principal */
+  .main-view {
+    display: flex;
+    gap: 20px;
+  }
+  
+  /* Explorador de imágenes */
+  .image-explorer {
+    flex: 2;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    overflow-y: auto;
+    max-height: 70vh;
+  }
+  
+  .image-explorer-item {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .image-explorer-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .image-explorer-item img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    margin-bottom: 10px;
+  }
+  
+  .image-explorer-item p {
+    text-align: center;
+    margin: 0;
+  }
+  
+  /* Lista de filtros */
+  .filter-list {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: #fff;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  
+  .filter-list h3 {
+    margin-bottom: 15px;
+  }
+  
+  .filter-list-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .filter-list-item input {
+    margin-right: 10px;
+  }
+  

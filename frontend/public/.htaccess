@@ -1,0 +1,18 @@
+# Habilitar el motor de reescritura
+RewriteEngine On
+
+# Permitir acceso a archivos y directorios existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirigir todas las rutas de React a index.html
+RewriteRule ^(.*)$ /index.html [L,QSA]
+
+# Bloquear acceso a archivos sensibles
+<FilesMatch "(\.env|\.htaccess|composer\.(json|lock)|package-lock\.json|yarn\.lock)">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Deshabilitar listado de directorios
+Options -Indexes
