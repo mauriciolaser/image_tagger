@@ -1,0 +1,7 @@
+/credenciales
+/backend/.env.production
+/frontend/build
+/frontend/node_modules
+/frontend/.env.production
+/frontend_backup
+/admin-panel
