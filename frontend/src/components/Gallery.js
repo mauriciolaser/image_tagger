@@ -17,6 +17,8 @@ const Gallery = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const imagesPerPage = 20;
   const API_URL = process.env.REACT_APP_API_URL;
+  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
+
 
   // Al montar el componente, cargar la primera página
   useEffect(() => {
@@ -147,7 +149,7 @@ const Gallery = () => {
             <h3 className="gallery-preview-title">Imagen seleccionada</h3>
             <p className="tag-thumbnail-label">{selectedImage.original_name || selectedImage.filename}</p>
             <img
-              src={`${API_URL}${selectedImage.path}`}
+              src={`${IMAGE_URL}${selectedImage.path}`}
               alt={selectedImage.original_name || selectedImage.filename}
               className="gallery-preview-image"
             />

@@ -35,10 +35,10 @@ const Login = () => {
 
         if (response.data.success) {
             // 🔹 Guardar user_id en localStorage
-            localStorage.setItem('user_id', response.data.user.id);
+            localStorage.setItem('user_id', response.data.user.user_id);
             localStorage.setItem('username', response.data.user.username);
 
-            console.log("✅ User ID guardado en localStorage:", response.data.user.id);
+            console.log("✅ User ID guardado en localStorage:", response.data.user.user_id);
 
             navigate('/gallery');
         } else {

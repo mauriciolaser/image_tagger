@@ -18,6 +18,8 @@ const Tag = () => {
   const imagesPerPage = 20; // ✅ Límite de imágenes por carga
 
   const API_URL = process.env.REACT_APP_API_URL;
+  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
+
 
   useEffect(() => {
     fetchUserId();
@@ -176,7 +178,7 @@ const Tag = () => {
               onClick={() => handleSelectImage(image)}
             >
               <img 
-                src={`${API_URL}${image.path}`} 
+                src={`${IMAGE_URL}${image.path}`} 
                 alt={image.original_name || image.filename} 
                 className="tag-thumbnail-img" 
               />
