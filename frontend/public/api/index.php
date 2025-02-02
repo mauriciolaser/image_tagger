@@ -2,42 +2,52 @@
 // Cargar Composer y PHP dotenv desde el backend
 require __DIR__ . '/../../../image_tagger/vendor/autoload.php';
 
-// Cargar variables de entorno desde el archivo .env del backend
+// Cargar variables de entorno
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../image_tagger');
-$dotenv->load(); // Cargar el archivo .env
+$dotenv->load();
 
-// Obtener la ruta base del backend desde el archivo .env
-$backendBasePath = $_ENV['BACKEND_BASE_PATH'] ?? __DIR__ . '/../../../image_tagger/';
-
-// Permitir solicitudes desde el frontend (CORS)
+// Configurar CORS PRIMERO (sin salidas previas)
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json"); // 🔴 Asegurar respuesta JSON
 
-// Manejar solicitudes OPTIONS (preflight)
+// Manejar OPTIONS inmediatamente
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Obtener el parámetro 'script' para determinar qué archivo del backend ejecutar (por defecto, api.php)
-$script = $_GET['script'] ?? 'api.php';
+// Obtener ruta base del backend desde .env
+$backendBasePath = $_ENV['BACKEND_BASE_PATH'] ?? __DIR__ . '/../../../image_tagger/';
 
-// **Calcular la ruta al archivo del backend desde el directorio base**
-$backendPath = $backendBasePath . $script;
+// Forzar siempre el script a api.php (eliminar parámetro 'script')
+$backendPath = $backendBasePath . 'api.php';
 
-// Mostrar la ruta calculada para depuración
-echo "Ruta calculada: " . $backendPath; // Esto debe mostrar la ruta completa
-
-// Verificar si el archivo existe
+// Verificar existencia del archivo
 if (!file_exists($backendPath)) {
     http_response_code(404);
-    header("Content-Type: application/json");
-    echo json_encode(["error" => "Archivo no encontrado: $script"]);
+    echo json_encode(["error" => "Archivo api.php no encontrado"]);
     exit;
 }
 
-// Incluir el archivo del backend (se ejecutará internamente sin exponer su ubicación real)
-require $backendPath;
+// Capturar método y cuerpo de la solicitud
+$method = $_SERVER['REQUEST_METHOD'];
+$content = file_get_contents('php://input');
 
+// Configurar entorno para el backend
+$_SERVER['REQUEST_METHOD'] = $method;
+$_SERVER['SCRIPT_FILENAME'] = $backendPath;
+
+// Reconstruir el flujo de entrada
+if (!empty($content)) {
+    $stream = fopen('php://temp', 'r+');
+    fwrite($stream, $content);
+    rewind($stream);
+    file_put_contents('php://input', stream_get_contents($stream));
+    fclose($stream);
+}
+
+// 🔴 Eliminar TODOS los echos/var_dump (rompen el JSON)
+require $backendPath;
 ?>

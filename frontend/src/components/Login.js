@@ -18,12 +18,19 @@ const Login = () => {
     }
 
     try {
-        const response = await axios.post(`${process.env.REACT_APP_API_URL}`, { 
-            action: "auth", // 🔹 Se agrega la acción para que api.php sepa qué hacer
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}`, 
+        { 
+            action: "auth",
             username, 
             password 
-        });
-
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json' // 🔑 Asegurar el header
+            }
+        }
+    );
         console.log("Respuesta del servidor:", response.data);
 
         if (response.data.success) {
