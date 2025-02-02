@@ -21,7 +21,7 @@ const Layout = ({ children }) => {
 
 function App() {
   return (
-    <Router>
+    <Router basename="image_tagger">
       <Layout>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

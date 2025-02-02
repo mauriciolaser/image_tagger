@@ -1,0 +1,25 @@
+# Habilitar el motor de reescritura
+RewriteEngine On
+
+# Redirigir todas las peticiones a index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?script=$1 [QSA,L]
+
+# Bloquear acceso directo a archivos PHP
+<FilesMatch "\.(php)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Permitir acceso solo a index.php
+<Files "index.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Bloquear acceso a archivos sensibles
+<FilesMatch "(\.env|\.htaccess|composer\.(json|lock)|vendor/.*)">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>

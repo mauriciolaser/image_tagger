@@ -25,9 +25,8 @@ const Canvas = () => {
       console.log(`🎲 Dado: ${diceRoll}, seleccionando ${selectedCharacter}`);
 
       p.preload = () => {
-        character = p.loadImage(`/images/${selectedCharacter}`,
-          () => console.log(`✅ ${selectedCharacter} cargado correctamente`),
-          () => console.error(`❌ Error al cargar ${selectedCharacter}`)
+        character = p.loadImage(`/image_tagger/images/${selectedCharacter}`,
+
         );
       };
 
@@ -37,7 +36,7 @@ const Canvas = () => {
         y = p.height / 2;
         dx = p.random(-2, 2);
         dy = p.random(-2, 2);
-        console.log("🔹 Setup completo: Personaje en", { x, y });
+
       };
 
       p.draw = () => {
@@ -48,7 +47,7 @@ const Canvas = () => {
           dx = p.random(-2, 2);
           dy = p.random(-2, 2);
           changeDirectionTime = p.millis() + p.random(5000, 8000);
-          console.log("🔄 Cambiando dirección:", { dx, dy });
+
         }
 
         // Mover personaje
@@ -66,10 +65,10 @@ const Canvas = () => {
         // Ajustar tamaño progresivamente sin cambiar posición
         if (isHovered && imgSize < 500) {
           imgSize += 10; // Crecimiento gradual
-          console.log("🖱️ Mouse sobre personaje - Tamaño:", imgSize);
+          console.log("GA!!!!!!!!!");
         } else if (!isHovered && imgSize > 100) {
           imgSize -= 5; // Contracción gradual
-          console.log("🚫 Mouse fuera de personaje - Tamaño:", imgSize);
+          console.log("uf...");
         }
 
         p.imageMode(p.CENTER);

@@ -60,7 +60,7 @@ if ($conn->connect_error) {
 }
 
 // Definir el directorio donde se guardarán las imágenes convertidas
-$uploadDir = __DIR__ . '/uploads/';
+$uploadDir = __DIR__ . '/../public_html/image_tagger/uploads/';
 // Si la carpeta no existe, se crea con permisos 0755
 if (!is_dir($uploadDir)) {
     if (!mkdir($uploadDir, 0755, true)) {
@@ -178,7 +178,7 @@ foreach ($tmpNames as $key => $tmpName) {
 
     // Registrar la imagen en la base de datos
     // Se asume que la tabla "images" tiene los campos: filename, original_name, path, file_hash, uploaded_by
-    $pathForDB = '/uploads/' . $newFilename; // Ruta relativa
+    $pathForDB = '/image_tagger/uploads/' . $newFilename; // Ruta relativa
     $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path, file_hash, uploaded_by) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("ssssi", $newFilename, $fileNames[$key], $pathForDB, $fileHash, $user_id);
 
