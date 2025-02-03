@@ -44,23 +44,46 @@ if ($conn->connect_error) {
     exit;
 }
 
+// Obtener la ruta de los archivos desde PRIVATE_IMAGES_DIR
+$privateImagesDir = rtrim($_ENV['PRIVATE_IMAGES_DIR'], '/');
+
 // Iniciar transacción para evitar inconsistencias
 $conn->begin_transaction();
 
 try {
-    // 1. Eliminar todas las relaciones en image_tags
+    // 1. Obtener los nombres de los archivos de todas las imágenes
+    $result = $conn->query("SELECT filename FROM images");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $filename = $row['filename'];
+            $filePath = $privateImagesDir . '/' . $filename;
+            if (file_exists($filePath)) {
+                if (!unlink($filePath)) {
+                    // Registra un error si no se pudo eliminar el archivo,
+                    // opcionalmente se puede lanzar una excepción para abortar la transacción.
+                    error_log("No se pudo eliminar el archivo: " . $filePath);
+                }
+            } else {
+                error_log("Archivo no encontrado en: " . $filePath);
+            }
+        }
+    } else {
+        throw new Exception("Error al obtener los nombres de los archivos de imágenes.");
+    }
+
+    // 2. Eliminar todas las relaciones en image_tags
     $deleteImageTagsQuery = "DELETE FROM image_tags";
     if (!$conn->query($deleteImageTagsQuery)) {
         throw new Exception("Error al eliminar las relaciones de tags.");
     }
 
-    // 2. Eliminar todas las imágenes de la tabla images
+    // 3. Eliminar todas las imágenes de la tabla images
     $deleteImagesQuery = "DELETE FROM images";
     if (!$conn->query($deleteImagesQuery)) {
         throw new Exception("Error al eliminar las imágenes.");
     }
 
-    // 3. Eliminar todos los tags de la tabla tags (solo si ya no están en image_tags)
+    // 4. Eliminar todos los tags de la tabla tags (solo si ya no están en image_tags)
     $deleteTagsQuery = "DELETE FROM tags";
     if (!$conn->query($deleteTagsQuery)) {
         throw new Exception("Error al eliminar los tags.");
@@ -68,8 +91,11 @@ try {
 
     // Confirmar transacción
     $conn->commit();
-    
-    echo json_encode(["success" => true, "message" => "Todas las imágenes, sus tags y las relaciones han sido eliminadas exitosamente."]);
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Todas las imágenes, sus tags, relaciones y archivos han sido eliminados exitosamente."
+    ]);
 } catch (Exception $e) {
     // Revertir cambios en caso de error
     $conn->rollback();

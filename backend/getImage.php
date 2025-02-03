@@ -18,9 +18,6 @@ function my_log($message) {
     error_log(date('[Y-m-d H:i:s] ') . $message . PHP_EOL, 3, $log_file);
 }
 
-// Prueba de escritura en debug.log
-my_log("Prueba de escritura en debug.log");
-
 // 1. Validar parámetro "file"
 $filename = $_GET['file'] ?? '';
 if (empty($filename)) {
@@ -37,12 +34,6 @@ $privateImagesDir = $_ENV['PRIVATE_IMAGES_DIR']; // Ej: /home/vallhzty/image_tag
 $realPrivateDir = realpath($privateImagesDir);
 $filePath = realpath($privateImagesDir . DIRECTORY_SEPARATOR . $filename);
 
-// Registrar en el log para depuración
-my_log("PRIVATE_IMAGES_DIR (sin realpath): " . $privateImagesDir);
-my_log("Real PRIVATE_IMAGES_DIR: " . $realPrivateDir);
-my_log("Filename recibido: " . $filename);
-my_log("FilePath obtenido: " . $filePath);
-
 // 4. Normalizar la ruta del directorio (elimina la barra final)
 $normalizedPrivateDir = rtrim($realPrivateDir, '/');
 my_log("Normalized PRIVATE_IMAGES_DIR: " . $normalizedPrivateDir);
@@ -53,15 +44,6 @@ if (!$filePath || !is_file($filePath)) {
     my_log("Imagen no encontrada: filePath no existe o no es un archivo.");
     die("Imagen no encontrada");
 }
-
-/*
-// Opcional: Validación extra de que la ruta esté dentro del directorio permitido.
-if (strpos($filePath, $normalizedPrivateDir) !== 0) {
-    http_response_code(404);
-    my_log("Imagen no encontrada: la ruta no está dentro del directorio permitido.");
-    die("Imagen no encontrada");
-}
-*/
 
 // 6. Enviar la imagen con headers correctos
 $mime = mime_content_type($filePath);
