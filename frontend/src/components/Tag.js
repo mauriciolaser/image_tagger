@@ -14,12 +14,18 @@ const Tag = () => {
   const [message, setMessage] = useState('');
   const [userId, setUserId] = useState(null);
   const [filterType, setFilterType] = useState('Todos');
-  const [currentPage, setCurrentPage] = useState(1); // ✅ Manejo de páginas
-  const imagesPerPage = 20; // ✅ Límite de imágenes por carga
+  const [currentPage, setCurrentPage] = useState(1);
+  const imagesPerPage = 20;
 
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
 
+  // Función similar a Gallery para generar la URL pública de la imagen
+  const getImageUrl = (filename) => {
+    // Se asume que IMAGE_URL ya incluye el endpoint correcto y el separador, por ejemplo:
+    // "https://valledemajes.website/image_tagger/api/index.php?action=getImage"
+    return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
+  };
 
   useEffect(() => {
     fetchUserId();
@@ -27,7 +33,7 @@ const Tag = () => {
 
   useEffect(() => {
     if (userId) {
-      fetchImages(1, true); // ✅ Cargar imágenes desde la página 1 al cambiar usuario
+      fetchImages(1, true); // Cargar desde la página 1 al cambiar usuario o filtro
     }
   }, [filterType, userId]);
 
@@ -50,12 +56,14 @@ const Tag = () => {
   const fetchImages = async (page, reset = false) => {
     if (!userId) return;
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}`, {
+      const response = await axios.get(API_URL, {
         params: { action: "getImageTags", page, user_id: userId },
       });
       
       if (response.data && Array.isArray(response.data.images)) {
-        setImages((prev) => (reset ? response.data.images : [...prev, ...response.data.images]));
+        setImages((prev) =>
+          reset ? response.data.images : [...prev, ...response.data.images]
+        );
         setCurrentPage(page);
       }
     } catch (error) {
@@ -75,11 +83,10 @@ const Tag = () => {
   const fetchImageTags = async (imageId) => {
     if (!userId) return;
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}`, {
+      const response = await axios.get(API_URL, {
         params: { action: "getImageTags", image_id: imageId, user_id: userId },
       });
       
-
       if (response.data && Array.isArray(response.data.images)) {
         const image = response.data.images[0];
         setSelectedImageTags(image?.tags || []);
@@ -101,14 +108,13 @@ const Tag = () => {
     if (!selectedImage || !tagText.trim() || !userId) return;
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}`, {
+      const response = await axios.post(API_URL, {
         action: "tagImage",
         image_id: selectedImage.id,
         tag: tagText.trim(),
         user_id: userId,
       });
       
-
       if (response.data.success) {
         setTagText('');
         await fetchImageTags(selectedImage.id);
@@ -125,14 +131,13 @@ const Tag = () => {
     if (!selectedImage || !userId) return;
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}`, {
+      const response = await axios.post(API_URL, {
         action: "deleteTag",
         image_id: selectedImage.id,
         tag_id: tagId,
         user_id: Number(userId),
       });
       
-
       if (response.data.success) {
         fetchImageTags(selectedImage.id);
       } else {
@@ -178,11 +183,13 @@ const Tag = () => {
               onClick={() => handleSelectImage(image)}
             >
               <img 
-                src={`${IMAGE_URL}${image.path}`} 
+                src={getImageUrl(image.filename)} 
                 alt={image.original_name || image.filename} 
                 className="tag-thumbnail-img" 
               />
-              <p className="tag-thumbnail-label">{image.original_name || image.filename}</p>
+              <p className="tag-thumbnail-label">
+                {image.original_name || image.filename}
+              </p>
             </div>
           ))}
         </div>
@@ -200,10 +207,12 @@ const Tag = () => {
         <div className="tag-preview-section">
           <div className="tag-preview-container">
             <h3 className="tag-preview-title">Imagen Seleccionada</h3>
-            <p className="tag-preview-name">Nombre: {selectedImage.original_name || 'Desconocido'}</p>
+            <p className="tag-preview-name">
+              Nombre: {selectedImage.original_name || 'Desconocido'}
+            </p>
 
             <img 
-              src={`${API_URL}${selectedImage.path}`} 
+              src={getImageUrl(selectedImage.filename)} 
               alt={selectedImage.original_name || selectedImage.filename} 
               className="tag-preview-image"
             />

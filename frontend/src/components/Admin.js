@@ -52,8 +52,9 @@ const Admin = () => {
   // Función para exportar los datos en CSV
   const handleExport = () => {
     console.log("Exporting images for userId:", userId);
-    window.open(`${API_URL}/exportImages.php?user_id=${userId}`, '_blank');
+    window.open(`${API_URL}/index.php?action=exportImages&user_id=${userId}`, '_blank');
   };
+  
 
   // Función para cerrar sesión
   const handleLogout = () => {
