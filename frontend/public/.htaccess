@@ -5,6 +5,9 @@ RewriteBase /image_tagger/
 # Excluir la carpeta uploads de la reescritura
 RewriteCond %{REQUEST_URI} !^/image_tagger/uploads/
 
+# Excluir getImage.php de la reescritura
+RewriteCond %{REQUEST_URI} !^/image_tagger/getImage\.php$
+
 # Permitir acceso a archivos y directorios existentes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -20,3 +23,11 @@ RewriteRule ^(.*)$ /image_tagger/index.html [L,QSA]
 
 # Deshabilitar listado de directorios
 Options -Indexes
+
+# Deshabilitar compresión para imágenes
+<IfModule mod_headers.c>
+    <FilesMatch "\.(webp|jpg|jpeg|png|gif)$">
+        SetEnv no-brotli 1
+        SetEnv no-gzip 1
+    </FilesMatch>
+</IfModule>

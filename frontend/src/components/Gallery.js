@@ -16,9 +16,8 @@ const Gallery = () => {
   const [deleteImageName, setDeleteImageName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const imagesPerPage = 20;
-  const API_URL = process.env.REACT_APP_API_URL;
-  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
-
+  const API_URL = process.env.REACT_APP_API_URL; 
+  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL; 
 
   // Al montar el componente, cargar la primera página
   useEffect(() => {
@@ -34,7 +33,7 @@ const Gallery = () => {
   // Función que solicita la página de imágenes (se asume que el backend soporta ?page=)
   const fetchImages = async (page) => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}`, {
+      const response = await axios.get(API_URL, {
         params: { action: "getImages", page }
       });
       
@@ -49,6 +48,11 @@ const Gallery = () => {
     } catch (error) {
       console.error('Error fetching images:', error);
     }
+  };
+
+  // Genera la URL de la imagen usando el endpoint del API
+  const getImageUrl = (filename) => {
+    return `${IMAGE_URL}?action=getImage&file=${encodeURIComponent(filename)}`;
   };
 
   // Maneja la selección de imagen para mostrar el preview
@@ -68,7 +72,7 @@ const Gallery = () => {
   const deleteImage = async () => {
     if (!selectedImage) return;
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}`, { 
+      const response = await axios.post(API_URL, { 
         action: "deleteImage", 
         image_id: selectedImage.id 
       });
@@ -78,7 +82,7 @@ const Gallery = () => {
         setSuccessDeleteModalOpen(true);
         // Elimina la imagen eliminada del array allImages
         setAllImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
-        // También elimina de displayedImages (si se mantiene independiente; si displayedImages se deriva de allImages, se actualizará con el useEffect)
+        // También elimina de displayedImages
         setDisplayedImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
         // Limpia la imagen seleccionada
         setSelectedImage(null);
@@ -90,7 +94,6 @@ const Gallery = () => {
       alert('Error deleting image.');
     }
   };
-  
 
   // Función para cargar más imágenes (la siguiente página)
   const loadMoreImages = () => {
@@ -125,11 +128,13 @@ const Gallery = () => {
               onClick={() => handleSelectImage(image)}
             >
               <img
-                src={image.public_url}
+                src={getImageUrl(image.filename)}
                 alt={image.original_name || image.filename}
                 className="gallery-thumbnail-img"
               />
-              <p className="gallery-thumbnail-label">{image.original_name || image.filename}</p>
+              <p className="gallery-thumbnail-label">
+                {image.original_name || image.filename}
+              </p>
             </div>
           ))}
         </div>
@@ -147,9 +152,11 @@ const Gallery = () => {
         {selectedImage && (
           <div className="gallery-preview">
             <h3 className="gallery-preview-title">Imagen seleccionada</h3>
-            <p className="tag-thumbnail-label">{selectedImage.original_name || selectedImage.filename}</p>
+            <p className="tag-thumbnail-label">
+              {selectedImage.original_name || selectedImage.filename}
+            </p>
             <img
-              src={selectedImage.public_url}
+              src={getImageUrl(selectedImage.filename)}
               alt={selectedImage.original_name || selectedImage.filename}
               className="gallery-preview-image"
             />
@@ -165,10 +172,16 @@ const Gallery = () => {
         className="gallery-modal-content"
         overlayClassName="gallery-modal-overlay"
       >
-        <h2 className="gallery-modal-title">¿Estás seguro que quieres borrar la imagen "{deleteImageName}"?</h2>
+        <h2 className="gallery-modal-title">
+          ¿Estás seguro que quieres borrar la imagen "{deleteImageName}"?
+        </h2>
         <div className="gallery-modal-buttons">
-          <button className="gallery-modal-confirm" onClick={deleteImage}>Continuar</button>
-          <button className="gallery-modal-cancel" onClick={() => setConfirmDeleteModalOpen(false)}>Cancelar</button>
+          <button className="gallery-modal-confirm" onClick={deleteImage}>
+            Continuar
+          </button>
+          <button className="gallery-modal-cancel" onClick={() => setConfirmDeleteModalOpen(false)}>
+            Cancelar
+          </button>
         </div>
       </Modal>
 
@@ -177,8 +190,12 @@ const Gallery = () => {
         className="gallery-modal-content"
         overlayClassName="gallery-modal-overlay"
       >
-        <h2 className="gallery-modal-title">Se borró exitosamente la imagen "{deleteImageName}"</h2>
-        <button className="gallery-modal-close" onClick={() => setSuccessDeleteModalOpen(false)}>Cerrar</button>
+        <h2 className="gallery-modal-title">
+          Se borró exitosamente la imagen "{deleteImageName}"
+        </h2>
+        <button className="gallery-modal-close" onClick={() => setSuccessDeleteModalOpen(false)}>
+          Cerrar
+        </button>
       </Modal>
     </div>
   );
