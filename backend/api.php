@@ -22,24 +22,26 @@ if ($isJson) {
     $rawData = file_get_contents('php://input');
     $data = json_decode($rawData, true);
     $action = $data['action'] ?? '';
+} elseif ($isMultipart) {
+    $action = $_POST['action'] ?? '';
 } else {
-    $isMultipart = strpos($contentType, 'multipart/form-data') !== false;
-    $action = $isMultipart ? ($_POST['action'] ?? '') : ($data['action'] ?? $_GET['action'] ?? '');
+    $action = $_GET['action'] ?? '';
 }
 
 // Definir rutas
 $routes = [
-    'auth' => 'auth.php',
-    'upload' => 'upload.php',
-    'admin' => 'admin.php',
-    'deleteImage' => 'deleteImage.php',
-    'deleteAllImages' => 'deleteAllImages.php',
-    'deleteTag' => 'deleteTag.php',
-    'exportImages' => 'exportImages.php',
-    'getImages' => 'getImages.php',
-    'getImageTags' => 'getImageTags.php',
-    'getUserId' => 'getUserId.php',
-    'tagImage' => 'tagImage.php'
+    'auth'           => 'auth.php',
+    'upload'         => 'upload.php',
+    'admin'          => 'admin.php',
+    'deleteImage'    => 'deleteImage.php',
+    'deleteAllImages'=> 'deleteAllImages.php',
+    'deleteTag'      => 'deleteTag.php',
+    'exportImages'   => 'exportImages.php',
+    'getImage'       => 'getImage.php',
+    'getImages'      => 'getImages.php',
+    'getImageTags'   => 'getImageTags.php',
+    'getUserId'      => 'getUserId.php',
+    'tagImage'       => 'tagImage.php'
 ];
 
 // Validar acción

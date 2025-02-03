@@ -52,8 +52,8 @@ $images = [];
 $publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
 
 while ($row = $result->fetch_assoc()) {
-    // Agregar la URL pública que apunta al script intermedio getImage.php
     $row['public_url'] = $publicUrlBase . "getImage.php?file=" . urlencode($row['filename']);
+    
     $images[] = $row;
 }
 

@@ -51,9 +51,10 @@ const Gallery = () => {
   };
 
   // Genera la URL de la imagen usando el endpoint del API
-  const getImageUrl = (filename) => {
-    return `${IMAGE_URL}?action=getImage&file=${encodeURIComponent(filename)}`;
-  };
+// Genera la URL de la imagen usando el endpoint del API
+const getImageUrl = (filename) => {
+  return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
+};
 
   // Maneja la selección de imagen para mostrar el preview
   const handleSelectImage = (image) => {
