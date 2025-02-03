@@ -125,7 +125,7 @@ const Gallery = () => {
               onClick={() => handleSelectImage(image)}
             >
               <img
-                src={`${IMAGE_URL}${image.path}`}
+                src={image.public_url}
                 alt={image.original_name || image.filename}
                 className="gallery-thumbnail-img"
               />
@@ -149,7 +149,7 @@ const Gallery = () => {
             <h3 className="gallery-preview-title">Imagen seleccionada</h3>
             <p className="tag-thumbnail-label">{selectedImage.original_name || selectedImage.filename}</p>
             <img
-              src={`${IMAGE_URL}${selectedImage.path}`}
+              src={selectedImage.public_url}
               alt={selectedImage.original_name || selectedImage.filename}
               className="gallery-preview-image"
             />
@@ -160,10 +160,8 @@ const Gallery = () => {
         )}
       </div>
 
-      {/* Modals (permanecen igual excepto por las clases) */}
       <Modal
         isOpen={confirmDeleteModalOpen}
-        // ... (props permanecen iguales)
         className="gallery-modal-content"
         overlayClassName="gallery-modal-overlay"
       >
@@ -176,7 +174,6 @@ const Gallery = () => {
 
       <Modal
         isOpen={successDeleteModalOpen}
-        // ... (props permanecen iguales)
         className="gallery-modal-content"
         overlayClassName="gallery-modal-overlay"
       >

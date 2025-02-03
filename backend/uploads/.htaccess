@@ -1,0 +1,6 @@
+# Desactivar la reescritura en este directorio
+RewriteEngine Off
+RewriteOptions InheritOff
+
+# Asegurar que los archivos .webp se sirvan con el MIME correcto
+AddType image/webp .webp

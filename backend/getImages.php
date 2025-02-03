@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/vendor/autoload.php';
 
-// Cargar variables de entorno desde `.env`
+// Cargar variables de entorno desde .env
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
@@ -35,7 +35,8 @@ if ($page < 1) {
 $offset = ($page - 1) * $imagesPerPage;
 
 // Consulta SQL para obtener imágenes sin tags
-$sql = "SELECT id, filename, original_name, path, uploaded_at 
+// (Se omite el campo 'path' para no exponer la ruta interna)
+$sql = "SELECT id, filename, original_name, uploaded_at 
         FROM images 
         ORDER BY uploaded_at DESC 
         LIMIT ?, ?";
@@ -45,7 +46,14 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $images = [];
+
+// Definir la URL pública base para servir imágenes
+// Se puede definir en .env como PUBLIC_URL_BASE; si no, se usa el valor por defecto.
+$publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
+
 while ($row = $result->fetch_assoc()) {
+    // Agregar la URL pública que apunta al script intermedio getImage.php
+    $row['public_url'] = $publicUrlBase . "getImage.php?file=" . urlencode($row['filename']);
     $images[] = $row;
 }
 

@@ -1,12 +1,16 @@
 # Habilitar el motor de reescritura
 RewriteEngine On
+RewriteBase /image_tagger/
+
+# Excluir la carpeta uploads de la reescritura
+RewriteCond %{REQUEST_URI} !^/image_tagger/uploads/
 
 # Permitir acceso a archivos y directorios existentes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Redirigir todas las rutas de React a index.html
-RewriteRule ^(.*)$ /index.html [L,QSA]
+# Redirigir todas las demás rutas a index.html
+RewriteRule ^(.*)$ /image_tagger/index.html [L,QSA]
 
 # Bloquear acceso a archivos sensibles
 <FilesMatch "(\.env|\.htaccess|composer\.(json|lock)|package-lock\.json|yarn\.lock)">

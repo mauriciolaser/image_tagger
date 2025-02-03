@@ -58,10 +58,6 @@ $stmt->bind_param("s", $username);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Depuración: Verifica el resultado de la consulta
-echo "Resultado de la consulta: ";
-var_dump($result->fetch_assoc()); // Verifica si los resultados de la consulta son correctos
-
 if ($result->num_rows === 0) {
     // Usuario no encontrado
     http_response_code(401);

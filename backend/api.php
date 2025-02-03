@@ -1,16 +1,33 @@
 <?php
-// Permitir solicitudes desde el frontend de React
+// Configurar headers PRIMERO
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json; charset=UTF-8");
 
-// Manejo de solicitudes OPTIONS para CORS
+// Manejar OPTIONS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Definir rutas disponibles y su archivo correspondiente
+// Leer datos según el tipo de contenido
+$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+$isJson = strpos($contentType, 'application/json') !== false;
+$isMultipart = strpos($contentType, 'multipart/form-data') !== false;
+
+// Obtener acción desde JSON, POST o GET
+$action = '';
+if ($isJson) {
+    $rawData = file_get_contents('php://input');
+    $data = json_decode($rawData, true);
+    $action = $data['action'] ?? '';
+} else {
+    $isMultipart = strpos($contentType, 'multipart/form-data') !== false;
+    $action = $isMultipart ? ($_POST['action'] ?? '') : ($data['action'] ?? $_GET['action'] ?? '');
+}
+
+// Definir rutas
 $routes = [
     'auth' => 'auth.php',
     'upload' => 'upload.php',
@@ -25,19 +42,15 @@ $routes = [
     'tagImage' => 'tagImage.php'
 ];
 
-// Obtener la acción desde el cuerpo de la solicitud o la query
-$action = $_POST['action'] ?? $_GET['action'] ?? '';
-
-// Verificar si la acción está definida en las rutas
+// Validar acción
 if (isset($routes[$action])) {
     $filePath = __DIR__ . '/' . $routes[$action];
-
-    // Verificar que el archivo existe antes de ejecutarlo
+    
     if (file_exists($filePath)) {
         require $filePath;
     } else {
         http_response_code(404);
-        echo json_encode(["error" => "Archivo de acción no encontrado"]);
+        echo json_encode(["error" => "Archivo no encontrado"]);
     }
 } else {
     http_response_code(400);
