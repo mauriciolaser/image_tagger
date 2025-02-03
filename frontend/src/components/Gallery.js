@@ -73,10 +73,10 @@ const getImageUrl = (filename) => {
   const deleteImage = async () => {
     if (!selectedImage) return;
     try {
-      const response = await axios.post(API_URL, { 
-        action: "deleteImage", 
-        image_id: selectedImage.id 
+      const response = await axios.delete(`${API_URL}/index.php?action=deleteImage`, {
+        data: { image_id: selectedImage.id }
       });
+      
       
       if (response.data.success) {
         setConfirmDeleteModalOpen(false);
