@@ -1,4 +1,10 @@
 <?php
+// 🆕 Validar que la acción sea correcta
+if (!isset($_GET['action']) || $_GET['action'] !== 'deleteAllImages') {
+    http_response_code(400);
+    die(json_encode(["success" => false, "message" => "Acción inválida"]));
+}
+
 require __DIR__ . '/vendor/autoload.php';
 
 // Cargar variables de entorno desde `.env`

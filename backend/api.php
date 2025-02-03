@@ -11,21 +11,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// 🆕 Capturar action desde query string (para métodos como DELETE)
+$queryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+parse_str($queryString, $queryParams);
+$action = $queryParams['action'] ?? '';
+
 // Leer datos según el tipo de contenido
 $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 $isJson = strpos($contentType, 'application/json') !== false;
 $isMultipart = strpos($contentType, 'multipart/form-data') !== false;
 
-// Obtener acción desde JSON, POST o GET
-$action = '';
-if ($isJson) {
+// Obtener acción desde JSON o POST (si no se obtuvo de la query string)
+if ($isJson && empty($action)) {
     $rawData = file_get_contents('php://input');
     $data = json_decode($rawData, true);
     $action = $data['action'] ?? '';
-} elseif ($isMultipart) {
+} elseif ($isMultipart && empty($action)) {
     $action = $_POST['action'] ?? '';
-} else {
-    $action = $_GET['action'] ?? '';
 }
 
 // Definir rutas

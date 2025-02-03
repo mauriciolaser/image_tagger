@@ -33,7 +33,7 @@ const Admin = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.delete(`${API_URL}/deleteAllImages.php`);
+      const response = await axios.delete(`${API_URL}/index.php?action=deleteAllImages`);
       console.log("Delete all images response:", response.data);
       if (response.data.success) {
         setAdminModalMessage("Se borraron exitosamente todas las imágenes.");
