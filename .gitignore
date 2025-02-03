@@ -3,4 +3,5 @@
 /frontend/build
 /frontend/node_modules
 /frontend/.env.production
-/admin-panel
+/admin-panel/node_modules
+/admin-panel/.env.production

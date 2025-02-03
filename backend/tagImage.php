@@ -87,11 +87,6 @@ if ($tagResult->num_rows > 0) {
     
     if ($insertTagStmt->execute()) {
         $tag_id = $conn->insert_id;
-        echo json_encode([
-            "success" => true,
-            "tag_id" => $tag_id, // Incluir el ID en la respuesta
-            "message" => "Tag agregado exitosamente"
-        ]);
     } else {
         http_response_code(500);
         echo json_encode(["success" => false, "message" => "Error al insertar el tag"]);

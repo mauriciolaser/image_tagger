@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/vendor/autoload.php';
 
-// Cargar variables de entorno desde `.env`
+// Cargar variables de entorno desde .env
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
@@ -40,7 +40,6 @@ $sql = "SELECT
             i.id, 
             i.filename, 
             i.original_name, 
-            i.path, 
             i.uploaded_at,
             IFNULL(GROUP_CONCAT(DISTINCT CONCAT(t.id, ':', t.name) ORDER BY t.name SEPARATOR ', '), '') AS tags
         FROM images i
@@ -56,27 +55,30 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $images = [];
-while ($row = $result->fetch_assoc()) {
 
+// Aquí se utiliza la misma estructura que en getImages.php
+$publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
+
+while ($row = $result->fetch_assoc()) {
+    // Procesar los tags
     $tags = [];
     if (!empty($row["tags"])) {
         $tagPairs = explode(", ", $row["tags"]);
         foreach ($tagPairs as $pair) {
             $parts = explode(":", $pair, 2);
-            if (count($parts) === 2) { // ✅ Asegurar que hay un ID y un nombre
+            if (count($parts) === 2) { // Asegurar que hay un ID y un nombre
                 $tags[] = ["id" => (int)$parts[0], "name" => $parts[1]];
             }
         }
     }
     
-    $images[] = [
-        "id" => $row["id"],
-        "filename" => $row["filename"],
-        "original_name" => $row["original_name"],
-        "path" => $row["path"],
-        "uploaded_at" => $row["uploaded_at"],
-        "tags" => $tags
-    ];
+    $row['public_url'] = $publicUrlBase . "getImage.php?file=" . urlencode($row['filename']);
+    // Se agregan los tags al arreglo de la imagen
+    $row['tags'] = $tags;
+    // Se omite el campo 'path' para no exponer la ruta interna
+    unset($row['path']);
+    
+    $images[] = $row;
 }
 
 $stmt->close();
