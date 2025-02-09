@@ -15,15 +15,15 @@ const Tag = () => {
   const [userId, setUserId] = useState(null);
   const [filterType, setFilterType] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
   const imagesPerPage = 20;
 
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
 
-  // Función similar a Gallery para generar la URL pública de la imagen
+  // Genera la URL pública de la imagen (igual que en Gallery)
   const getImageUrl = (filename) => {
-    // Se asume que IMAGE_URL ya incluye el endpoint correcto y el separador, por ejemplo:
-    // "https://valledemajes.website/image_tagger/api/index.php?action=getImage"
     return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
   };
 
@@ -33,7 +33,7 @@ const Tag = () => {
 
   useEffect(() => {
     if (userId) {
-      fetchImages(1, true); // Cargar desde la página 1 al cambiar usuario o filtro
+      fetchImages(1, true); // Cargar imágenes desde la página 1 al cambiar usuario o filtro
     }
   }, [filterType, userId]);
 
@@ -59,7 +59,6 @@ const Tag = () => {
       const response = await axios.get(API_URL, {
         params: { action: "getImageTags", page, user_id: userId },
       });
-      
       if (response.data && Array.isArray(response.data.images)) {
         setImages((prev) =>
           reset ? response.data.images : [...prev, ...response.data.images]
@@ -80,14 +79,14 @@ const Tag = () => {
     }
   };
 
+  // Llama a getImageTags pasando image_id para obtener los tags de la imagen seleccionada
   const fetchImageTags = async (imageId) => {
     if (!userId) return;
     try {
       const response = await axios.get(API_URL, {
         params: { action: "getImageTags", image_id: imageId, user_id: userId },
       });
-      
-      if (response.data && Array.isArray(response.data.images)) {
+      if (response.data && Array.isArray(response.data.images) && response.data.images.length > 0) {
         const image = response.data.images[0];
         setSelectedImageTags(image?.tags || []);
       } else {
@@ -106,7 +105,6 @@ const Tag = () => {
   const handleTagSubmit = async (e) => {
     e.preventDefault();
     if (!selectedImage || !tagText.trim() || !userId) return;
-
     try {
       const response = await axios.post(API_URL, {
         action: "tagImage",
@@ -114,10 +112,13 @@ const Tag = () => {
         tag: tagText.trim(),
         user_id: userId,
       });
-      
       if (response.data.success) {
-        setTagText('');
+        // Actualizar tags inmediatamente
         await fetchImageTags(selectedImage.id);
+        const username = localStorage.getItem('username') || "UsuarioReal";
+        setModalMessage(`Tag: ${tagText.trim()} asignado correctamente para el usuario ${username}`);
+        setModalOpen(true);
+        setTagText('');
       } else {
         setMessage(response.data.message || 'No se pudo agregar el tag.');
       }
@@ -129,7 +130,6 @@ const Tag = () => {
 
   const handleTagDelete = async (tagId) => {
     if (!selectedImage || !userId) return;
-
     try {
       const response = await axios.post(API_URL, {
         action: "deleteTag",
@@ -137,9 +137,8 @@ const Tag = () => {
         tag_id: tagId,
         user_id: Number(userId),
       });
-      
       if (response.data.success) {
-        fetchImageTags(selectedImage.id);
+        await fetchImageTags(selectedImage.id);
       } else {
         setMessage(response.data.message || 'No se pudo eliminar el tag.');
       }
@@ -159,7 +158,6 @@ const Tag = () => {
         <div className="tag-header">
           <h2 className="tag-title">Tag Images</h2>
         </div>
-
         <div className="tag-controls">
           <div className="tag-filter-container">
             <label className="tag-filter-label">Filtrar por:</label>
@@ -174,7 +172,6 @@ const Tag = () => {
             </select>
           </div>
         </div>
-
         <div className="tag-images-grid">
           {filteredImages.map((image) => (
             <div 
@@ -193,7 +190,6 @@ const Tag = () => {
             </div>
           ))}
         </div>
-
         {filteredImages.length >= currentPage * imagesPerPage && (
           <div className="tag-load-more">
             <button className="tag-load-more-button" onClick={loadMoreImages}>
@@ -202,7 +198,6 @@ const Tag = () => {
           </div>
         )}
       </div>
-
       {selectedImage && (
         <div className="tag-preview-section">
           <div className="tag-preview-container">
@@ -210,14 +205,12 @@ const Tag = () => {
             <p className="tag-preview-name">
               Nombre: {selectedImage.original_name || 'Desconocido'}
             </p>
-
             <img 
               src={getImageUrl(selectedImage.filename)} 
               alt={selectedImage.original_name || selectedImage.filename} 
               className="tag-preview-image"
             />
             <p className="tag-preview-id">ID: {selectedImage.id}</p>
-
             <div className="tag-management">
               <div className="tag-list-container">
                 <h4 className="tag-list-title">Tags agregados:</h4>
@@ -239,7 +232,6 @@ const Tag = () => {
                   <p className="tag-empty-message">No hay tags para esta imagen.</p>
                 )}
               </div>
-
               <div className="tag-input-wrapper">
                 <h4 className="tag-input-title">Agregar un tag</h4>
                 <form className="tag-input-form" onSubmit={handleTagSubmit}>
@@ -259,6 +251,24 @@ const Tag = () => {
             </div>
           </div>
         </div>
+      )}
+      {modalOpen && (
+        <Modal
+          isOpen={modalOpen}
+          onRequestClose={() => setModalOpen(false)}
+          contentLabel="Tag asignado"
+          style={{
+            content: {
+              width: '400px',
+              height: '200px',
+              margin: 'auto',
+              textAlign: 'center'
+            }
+          }}
+        >
+          <h2>{modalMessage}</h2>
+          <button onClick={() => setModalOpen(false)}>Cerrar</button>
+        </Modal>
       )}
     </div>
   );
