@@ -2,8 +2,9 @@
 
 Frontend: React. 
 
-Backend: Configurado para ser implementado en un servidor Apache.
-Reemplazar las variables de entorno y gestionarlas con vlucas/phpdotenv.
+Backend: Configurado para ser implementado en un servidor Apache. Recomiendo implementarlo en XAMPP.
+
+Reemplazar las variables de entorno y gestionarlas con vlucas/phpdotenv. En caso no se cuente con phpdotenv hay que instalar composer en la carpeta de backend.
 
 ## Sobre el programa
 
