@@ -21,24 +21,20 @@ if ($conn->connect_error) {
     die("Database connection error: " . $conn->connect_error);
 }
 
-// Obtener el user_id del parámetro GET (se asume que el usuario está logueado)
-$user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
-if ($user_id === 0) {
-    die("User ID is required.");
-}
-
-// Consulta para obtener todas las imágenes y sus tags asignados por ese usuario.
+// Consulta para obtener todas las imágenes y TODOS los tags asociados a cada imagen
 $sql = "
-SELECT i.id, i.original_name, IFNULL(GROUP_CONCAT(t.name SEPARATOR ', '), '') AS tags
+SELECT 
+    i.id, 
+    i.original_name, 
+    IFNULL(GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', '), '') AS tags
 FROM images i
-LEFT JOIN image_tags it ON i.id = it.image_id AND it.user_id = ?
+LEFT JOIN image_tags it ON i.id = it.image_id
 LEFT JOIN tags t ON it.tag_id = t.id
 GROUP BY i.id
 ORDER BY i.uploaded_at DESC
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 

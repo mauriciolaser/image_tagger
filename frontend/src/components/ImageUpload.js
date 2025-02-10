@@ -14,11 +14,17 @@ const ImageUpload = () => {
   const [uploadModalMessage, setUploadModalMessage] = useState('');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const API_URL = process.env.REACT_APP_API_URL;
-  const userId = localStorage.getItem('user_id'); // ⚠️ Obtener user_id de localStorage
+  
+  // Obtener user_id y username desde localStorage.
+  const userId = localStorage.getItem('user_id');  
+  const username = localStorage.getItem('username');
 
   useEffect(() => {
     let interval;
-    if (statusMessage.startsWith("TRABAJANDO") || statusMessage.startsWith("FINALIZANDO")) {
+    if (
+      statusMessage.startsWith("TRABAJANDO") ||
+      statusMessage.startsWith("FINALIZANDO")
+    ) {
       interval = setInterval(() => {
         setStatusMessage((prev) => {
           if (prev.endsWith("...")) return prev.slice(0, -3) + ".";
@@ -47,20 +53,22 @@ const ImageUpload = () => {
 
     const formData = new FormData();
     files.forEach((file) => formData.append('images[]', file));
-
-    // ⚠️ Enviar user_id en la solicitud
+    
+    // Enviar user_id en la solicitud
     formData.append("user_id", userId);
-    formData.append("action", "upload"); // 🔹 Se agrega la acción para que api.php sepa qué hacer
+    formData.append("action", "upload"); // Se agrega la acción para que api.php sepa qué hacer
 
     setLoading(true);
     setProgress(0);
     setStatusMessage("Subiendo... 0%");
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}`, formData, {
+      const response = await axios.post(`${API_URL}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
           setProgress(percentCompleted);
           setStatusMessage(`Subiendo... ${percentCompleted}%`);
 
@@ -82,17 +90,24 @@ const ImageUpload = () => {
       console.log("Procesamiento del servidor finalizado.");
       setStatusMessage("Listo.");
 
-      if (response.data && Array.isArray(response.data.results) && response.data.results.length > 0) {
-        const successfulResults = response.data.results.filter(r => r.success);
+      if (
+        response.data &&
+        Array.isArray(response.data.results) &&
+        response.data.results.length > 0
+      ) {
+        const successfulResults = response.data.results.filter((r) => r.success);
         let modalMessage = "";
 
         if (successfulResults.length > 1) {
           if (successfulResults.length > 10) {
-            const firstTenNames = successfulResults.slice(0, 10).map(r => r.original_name).join(', ');
+            const firstTenNames = successfulResults
+              .slice(0, 10)
+              .map((r) => r.original_name)
+              .join(', ');
             const extraCount = successfulResults.length - 10;
             modalMessage = `Se han subido ${successfulResults.length} imágenes: ${firstTenNames} y otras ${extraCount} imágenes extra.`;
           } else {
-            const names = successfulResults.map(r => r.original_name).join(', ');
+            const names = successfulResults.map((r) => r.original_name).join(', ');
             modalMessage = `Se han subido ${successfulResults.length} imágenes: ${names}`;
           }
         } else if (successfulResults.length === 1) {
@@ -121,7 +136,13 @@ const ImageUpload = () => {
   return (
     <div className="image-upload-container">
       <h1>Carga de Imágenes</h1>
-      {userId ? <p>Usuario ID: {userId}</p> : <p style={{ color: 'red' }}>⚠️ Debes iniciar sesión para subir imágenes.</p>}
+      {username ? (
+        <p>Usuario: {username}</p>
+      ) : (
+        <p style={{ color: 'red' }}>
+          ⚠️ Debes iniciar sesión para subir imágenes.
+        </p>
+      )}
       
       <form onSubmit={handleUpload}>
         <label htmlFor="fileInput">Selecciona las imágenes:</label>
