@@ -6,34 +6,39 @@ import './Tag.css';
 Modal.setAppElement('#root');
 
 const Tags = () => {
-  // Estados para la carga de imágenes (idénticos a Gallery)
+  // Estados para la carga de imágenes y paginación (igual que en Gallery)
   const [allImages, setAllImages] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const imagesPerPage = 20;
-  
-  // Estados para la imagen seleccionada y la gestión de tags
+
+  // Estado para el filtro de la grilla: "all" (Todas), "with" (Con Tags) o "without" (Sin Tags)
+  const [filter, setFilter] = useState("all");
+  // Mapeo de image_id a su arreglo de tags (obtenido de getAllTags)
+  const [imageTagsMap, setImageTagsMap] = useState({});
+
+  // Estados para la imagen seleccionada y sus tags (consulta individual para el usuario)
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImageTags, setSelectedImageTags] = useState([]);
   const [selectedImageOtherTags, setSelectedImageOtherTags] = useState([]);
   const [showOtherTags, setShowOtherTags] = useState(false);
-  
-  // Otros estados para agregar tags, mostrar mensajes, etc.
+
+  // Otros estados para agregar tags, mostrar mensajes, modal, etc.
   const [tagText, setTagText] = useState('');
   const [message, setMessage] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [userId, setUserId] = useState(null);
-  
+
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
-  
+
   // Función para generar la URL pública de la imagen
   const getImageUrl = (filename) => {
     return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
   };
-  
-  // Al montar el componente, se obtiene el user_id (igual que en Gallery)
+
+  // Al montar el componente, se obtiene el user_id de localStorage
   useEffect(() => {
     const storedUserId = localStorage.getItem('user_id');
     if (storedUserId) {
@@ -42,20 +47,20 @@ const Tags = () => {
       console.error('No se pudo obtener el user_id.');
     }
   }, []);
-  
-  // Una vez que se obtiene el user_id, se cargan las imágenes usando la acción "getImages"
+
+  // Una vez obtenido el user_id, se cargan las imágenes mediante la acción "getImages"
   useEffect(() => {
     if (userId) {
       fetchImages(1, true);
     }
   }, [userId]);
-  
-  // Cada vez que cambian allImages o currentPage, actualiza el listado mostrado
+
+  // Cada vez que cambian allImages o currentPage, se actualiza el listado mostrado
   useEffect(() => {
     setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
   }, [allImages, currentPage]);
-  
-  // Función para cargar imágenes (usando la misma lógica que Gallery)
+
+  // Función para cargar imágenes (sin cambios respecto a tu código original)
   const fetchImages = async (page, reset = false) => {
     try {
       const response = await axios.get(API_URL, {
@@ -73,8 +78,49 @@ const Tags = () => {
       console.error("Error fetching images:", error);
     }
   };
-  
-  // Al seleccionar una imagen, se guarda y se consultan sus tags propios
+
+  // Función para llamar al endpoint getAllTags para un listado de imágenes
+  // Se espera recibir un array de IDs de imágenes y se construye el parámetro image_ids
+  const fetchAllTagsForGrid = async (imageIds) => {
+    try {
+      const response = await axios.get(API_URL, {
+        params: {
+          action: "getAllTags",
+          image_ids: imageIds.join(',')
+        }
+      });
+      if (response.data.success) {
+        // Se actualiza el state fusionando los tags recibidos con los ya almacenados
+        setImageTagsMap(prev => ({ ...prev, ...response.data.tags }));
+      }
+    } catch (error) {
+      console.error("Error fetching all tags:", error);
+    }
+  };
+
+  // Cuando se actualizan las imágenes mostradas, se consulta el endpoint para obtener los tags
+  useEffect(() => {
+    if (userId && displayedImages.length > 0) {
+      // Se seleccionan aquellas imágenes para las cuales aún no se han obtenido tags
+      const idsToFetch = displayedImages
+        .map(image => image.id)
+        .filter(id => !(id in imageTagsMap));
+      if (idsToFetch.length > 0) {
+        fetchAllTagsForGrid(idsToFetch);
+      }
+    }
+  }, [displayedImages, userId, imageTagsMap]);
+
+  // Se filtran las imágenes mostradas en la grilla según el estado filter y la info en imageTagsMap
+  const filteredImages = displayedImages.filter(image => {
+    const tags = imageTagsMap[image.id] || [];
+    if (filter === "all") return true;
+    if (filter === "with") return tags.length > 0;
+    if (filter === "without") return tags.length === 0;
+    return true;
+  });
+
+  // Al seleccionar una imagen, se guarda en selectedImage y se consultan sus tags (acción individual)
   const handleSelectImage = (image) => {
     setSelectedImage(image);
     fetchImageTags(image.id);
@@ -82,8 +128,8 @@ const Tags = () => {
     setShowOtherTags(false);
     setSelectedImageOtherTags([]);
   };
-  
-  // Consulta los tags asignados por el usuario para la imagen seleccionada (action "getImageTags")
+
+  // Consulta los tags asignados por el usuario para la imagen seleccionada (acción getImageTags)
   const fetchImageTags = async (imageId) => {
     if (!userId) return;
     try {
@@ -101,8 +147,8 @@ const Tags = () => {
       setSelectedImageTags([]);
     }
   };
-  
-  // Consulta los tags asignados por otros usuarios para la imagen seleccionada (usando others=1)
+
+  // Consulta los tags asignados por otros usuarios para la imagen seleccionada (others=1)
   const fetchOtherImageTags = async (imageId) => {
     if (!userId) return;
     try {
@@ -120,7 +166,7 @@ const Tags = () => {
       setSelectedImageOtherTags([]);
     }
   };
-  
+
   // Manejo del envío de un nuevo tag
   const handleTagSubmit = async (e) => {
     e.preventDefault();
@@ -134,6 +180,8 @@ const Tags = () => {
       });
       if (response.data.success) {
         await fetchImageTags(selectedImage.id);
+        // Actualiza la grilla para reflejar el nuevo tag en la imagen seleccionada
+        fetchAllTagsForGrid([selectedImage.id]);
         setModalMessage(`Tag: ${tagText.trim()} agregado`);
         setModalOpen(true);
         setTagText('');
@@ -145,8 +193,8 @@ const Tags = () => {
       setMessage('Error al enviar el tag.');
     }
   };
-  
-  // Manejo de la eliminación de un tag con modal al borrar
+
+  // Manejo de la eliminación de un tag
   const handleTagDelete = async (tagId, tagName) => {
     if (!selectedImage || !userId) return;
     try {
@@ -158,7 +206,8 @@ const Tags = () => {
       });
       if (response.data.success) {
         await fetchImageTags(selectedImage.id);
-        // Mostrar modal con mensaje de borrado exitoso y nombre del tag borrado
+        // Actualiza la grilla para reflejar la eliminación en la imagen seleccionada
+        fetchAllTagsForGrid([selectedImage.id]);
         setModalMessage(`Borraste el tag "${tagName}"`);
         setModalOpen(true);
       } else {
@@ -169,20 +218,42 @@ const Tags = () => {
       setMessage('Error al eliminar el tag.');
     }
   };
-  
+
   // Función para cargar más imágenes (la siguiente página)
   const loadMoreImages = () => {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
     fetchImages(nextPage);
   };
-  
+
   return (
     <div className="tag-container">
       <div className="tag-main-section">
         <h2>Tags</h2>
+        {/* Barra de filtros */}
+        <div className="tag-filter-bar">
+          <button 
+            className={filter === "all" ? "active" : ""}
+            onClick={() => setFilter("all")}
+          >
+            Todas
+          </button>
+          <button 
+            className={filter === "with" ? "active" : ""}
+            onClick={() => setFilter("with")}
+          >
+            Con Tags
+          </button>
+          <button 
+            className={filter === "without" ? "active" : ""}
+            onClick={() => setFilter("without")}
+          >
+            Sin Tags
+          </button>
+        </div>
+        {/* Grilla de imágenes (se muestran las filtradas) */}
         <div className="tag-images-grid">
-          {displayedImages.map(image => (
+          {filteredImages.map(image => (
             <div key={image.id} className="tag-thumbnail" onClick={() => handleSelectImage(image)}>
               <img
                 src={getImageUrl(image.filename)}
@@ -233,7 +304,7 @@ const Tags = () => {
                   <p className="tag-empty-message">No hay tags para esta imagen.</p>
                 )}
               </div>
-              {/* Sección oculta para mostrar los tags de otros usuarios */}
+              {/* Sección colapsable para mostrar los tags de otros usuarios */}
               <div className="tag-list-others">
                 <div
                   className="tag-list-others-header"
