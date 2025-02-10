@@ -1,5 +1,5 @@
--- Crear la base de datos (si no existe)
-CREATE DATABASE IF NOT EXISTS image_tagger;
+-- Crear la base de datos si no existe
+CREATE DATABASE IF NOT EXISTS image_tagger CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE image_tagger;
 
 -- Crear la tabla de usuarios
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS images (
     filename VARCHAR(255) NOT NULL,
     original_name VARCHAR(255) NOT NULL,
     path VARCHAR(255) NOT NULL,
-    file_hash VARCHAR(64) NOT NULL,
+    file_hash VARCHAR(64) NOT NULL UNIQUE,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     uploaded_by INT UNSIGNED DEFAULT NULL,
     CONSTRAINT fk_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
@@ -44,4 +44,21 @@ CREATE TABLE IF NOT EXISTS image_tags (
     CONSTRAINT fk_image FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
     CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Crear la tabla de trabajos de importación
+CREATE TABLE IF NOT EXISTS import_jobs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    status ENUM('pending', 'running', 'stopped', 'completed') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_import_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Crear la tabla de cola de importación de imágenes (batches)
+CREATE TABLE IF NOT EXISTS image_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'processing', 'done', 'error') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,85 +1,110 @@
-/* Admin.css */
-
 /* Contenedor principal */
 .admin-container {
-    padding: 20px;
-    max-width: 800px;
-    margin: 0 auto;
-    font-family: Arial, sans-serif;
-    box-sizing: border-box;
-  }
-  
-  /* Encabezado de la pantalla */
-  .admin-header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  .admin-header h2 {
-    font-size: 2rem;
-    margin: 0;
-  }
-  
-  .user-info {
-    font-size: 1.2rem;
-    color: #555;
-    margin-top: 5px;
-  }
-  
-  /* Contenedor para los botones, en columnas */
-  .admin-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-    margin-top: 20px;
-  }
-  
-  /* Estilo común para los botones */
-  .admin-buttons button {
-    width: 100%;
-    max-width: 300px;
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  /* Botón para borrar imágenes */
-  .delete-button {
-    background-color: #d9534f;
-    color: #fff;
-  }
-  
-  .delete-button:hover {
-    background-color: #c9302c;
-  }
-  
-  /* Botón para exportar */
-  .export-button {
-    background-color: #5bc0de;
-    color: #fff;
-  }
-  
-  .export-button:hover {
-    background-color: #31b0d5;
-  }
-  
-  /* Estilos responsivos */
-  @media (max-width: 600px) {
-    .admin-header h2 {
-      font-size: 1.5rem;
-    }
-    
-    .user-info {
-      font-size: 1rem;
-    }
-    
-    .admin-buttons button {
-      font-size: 14px;
-      max-width: 90%;
-    }
-  }
-  
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Encabezado */
+.admin-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.admin-header h2 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.user-info {
+  font-size: 1.2rem;
+  color: #555;
+  margin-top: 5px;
+}
+
+/* Botones */
+.admin-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.admin-buttons button {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button {
+  background-color: #d9534f;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #c9302c;
+}
+
+.export-button {
+  background-color: #5bc0de;
+  color: white;
+}
+
+.export-button:hover {
+  background-color: #31b0d5;
+}
+
+.import-button {
+  background-color: #e0de62;
+  color: white;
+}
+
+.import-button:hover {
+  background-color: #ca7e4c;
+}
+
+.admin-modal {
+  background: white;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+  margin: auto;
+  text-align: center;
+  border-radius: 8px;
+  position: relative;
+}
+
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-modal-confirm-button {
+  background-color: #5cb85c;
+  color: white;
+  padding: 10px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.admin-modal-cancel-button {
+  background-color: #d9534f;
+  color: white;
+  padding: 10px;
+  cursor: pointer;
+}

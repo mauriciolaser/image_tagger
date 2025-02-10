@@ -30,7 +30,7 @@ if ($isJson && empty($action)) {
     $action = $_POST['action'] ?? '';
 }
 
-// Definir rutas
+// Definir rutas existentes
 $routes = [
     'auth'           => 'auth.php',
     'upload'         => 'upload.php',
@@ -43,13 +43,25 @@ $routes = [
     'getImages'      => 'getImages.php',
     'getImageTags'   => 'getImageTags.php',
     'getUserId'      => 'getUserId.php',
+    'getAllTags'     => 'getAllTags.php',
+    'importImages'   => 'importImages.php',
     'tagImage'       => 'tagImage.php'
 ];
+
+// 🆕 Agregar nuevas rutas para importación en batches
+$batchImportRoutes = [
+    'startImport'    => 'startImport.php',
+    'stopImport'     => 'stopImport.php',
+    'importStatus'   => 'importStatus.php'
+];
+
+// Fusionar rutas existentes con nuevas rutas sin mezclar código
+$routes = array_merge($routes, $batchImportRoutes);
 
 // Validar acción
 if (isset($routes[$action])) {
     $filePath = __DIR__ . '/' . $routes[$action];
-    
+
     if (file_exists($filePath)) {
         require $filePath;
     } else {
