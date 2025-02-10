@@ -28,18 +28,20 @@ const Admin = () => {
     if (storedUserId) setUserId(storedUserId);
   }, []);
 
-  // Monitoreo del estado de importación
+  // Monitoreo del estado de importación usando jobId
   useEffect(() => {
     let interval;
     if (jobId) {
       interval = setInterval(async () => {
         try {
-          const response = await axios.get(`${API_URL}?action=startImport&user_id=${userId}`);
+          // Se utiliza job_id para consultar el estado
+          const response = await axios.get(`${API_URL}?action=importStatus&job_id=${jobId}`);
           if (response.data.success) {
             setImportStatus(response.data.status);
             if (response.data.status === "completed" || response.data.status === "stopped") {
               clearInterval(interval);
               setJobId(null);
+              setModalMessage("Importación completada.");
             }
           }
         } catch (error) {
@@ -48,13 +50,17 @@ const Admin = () => {
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [jobId]);
+  }, [jobId, API_URL]);
 
   const handleDeleteAllImages = async () => {
     setDeleteLoading(true);
     try {
-      const response = await axios.delete(`${API_URL}/index.php?action=deleteAllImages`);
-      setModalMessage(response.data.success ? "Se borraron todas las imágenes." : "Error al borrar imágenes.");
+      const response = await axios.delete(`${API_URL}?action=deleteAllImages`);
+      setModalMessage(
+        response.data.success
+          ? "Se borraron todas las imágenes."
+          : "Error al borrar imágenes."
+      );
     } catch (error) {
       setModalMessage("Error al borrar imágenes.");
     } finally {
@@ -70,30 +76,34 @@ const Admin = () => {
       setStatusModalOpen(true);
       return;
     }
-    window.open(`${API_URL}/index.php?action=exportImages&user_id=${userId}`, '_blank');
+    window.open(`${API_URL}?action=exportImages&user_id=${userId}`, '_blank');
   };
 
   const handleImportImages = async () => {
     if (!userId) {
-      setModalMessage("No se encontró user_id.");
+      setModalMessage("No se encontró user_id en localStorage.");
       setStatusModalOpen(true);
       return;
     }
-    setImportLoading(true);
+
     try {
-      const response = await axios.get(`${API_URL}/index.php?action=startImport&user_id=${userId}`);
+      // Iniciar importación llamando a startImport con user_id
+      setImportLoading(true);
+      const response = await axios.get(`${API_URL}?action=startImport&user_id=${userId}`);
+
       if (response.data.success) {
+        // Se obtiene y almacena el job_id para el monitoreo
         setJobId(response.data.job_id);
         setImportStatus("running");
         setModalMessage("Importación en proceso...");
       } else {
-        setModalMessage("Error al iniciar la importación.");
+        setModalMessage(response.data.message || "Error al iniciar la importación.");
       }
     } catch (error) {
       setModalMessage("Error al importar imágenes.");
     } finally {
       setImportLoading(false);
-      setImportModalOpen(false);
+      setImportModalOpen(false); // Cierra el modal de importación para que no se vuelva a mostrar
       setStatusModalOpen(true);
     }
   };
@@ -101,7 +111,7 @@ const Admin = () => {
   const handleCancelImport = async () => {
     if (!jobId) return;
     try {
-      const response = await axios.get(`${API_URL}/index.php?action=stopImport&job_id=${jobId}`);
+      const response = await axios.get(`${API_URL}?action=stopImport&job_id=${jobId}`);
       if (response.data.success) {
         setImportStatus("stopped");
         setModalMessage("Importación detenida.");
@@ -130,7 +140,7 @@ const Admin = () => {
       </div>
       <div className="admin-buttons">
         <button onClick={() => setDeleteModalOpen(true)} disabled={deleteLoading} className="delete-button">
-          {deleteLoading ? "Borrando..." : "Borrar todas las imágenes"}
+          {deleteLoading ? "Borrando..." : "Nuke database ☢️"}
         </button>
         <button onClick={handleExport} disabled={deleteLoading || importLoading} className="export-button">
           Exportar
@@ -146,31 +156,54 @@ const Admin = () => {
       {/* Modal de confirmación de eliminación */}
       <Modal isOpen={deleteModalOpen} onRequestClose={() => setDeleteModalOpen(false)} className="admin-modal">
         <h2>¿Borrar todas las imágenes?</h2>
-        <button onClick={handleDeleteAllImages} className="admin-modal-confirm-button">Sí, borrar</button>
-        <button onClick={() => setDeleteModalOpen(false)}>Cancelar</button>
+        <button onClick={handleDeleteAllImages} className="admin-modal-confirm-button">
+          Sí, borrar
+        </button>
+        <button onClick={() => setDeleteModalOpen(false)} className="admin-modal-cancel-button">
+          Cancelar
+        </button>
       </Modal>
 
       {/* Modal de confirmación de importación */}
       <Modal isOpen={importModalOpen} onRequestClose={() => setImportModalOpen(false)} className="admin-modal">
         <h2>¿Importar imágenes?</h2>
-        <button onClick={handleImportImages} className="admin-modal-confirm-button">Sí, importar</button>
-        <button onClick={() => setImportModalOpen(false)}>Cancelar</button>
+        <button onClick={handleImportImages} className="admin-modal-confirm-button">
+          Sí, importar
+        </button>
+        <button onClick={() => setImportModalOpen(false)} className="admin-modal-cancel-button">
+          Cancelar
+        </button>
       </Modal>
 
       {/* Modal de estado */}
       <Modal isOpen={statusModalOpen} onRequestClose={() => setStatusModalOpen(false)} className="admin-modal">
         <h2>{modalMessage}</h2>
-        {jobId && (
+        {jobId && importStatus === "running" && (
           <>
             <p>Estado: {importStatus}</p>
-            {importStatus === "running" && (
-              <button onClick={handleCancelImport} className="admin-modal-cancel-button">
-                Cancelar Importación
-              </button>
-            )}
+            <button onClick={handleCancelImport} className="admin-modal-cancel-button">
+              Cancelar
+            </button>
+            <button onClick={() => setStatusModalOpen(false)} className="admin-modal-cancel-button">
+              Cerrar
+            </button>
           </>
         )}
-        <button onClick={() => setStatusModalOpen(false)}>Cerrar</button>
+        {(!jobId &&
+          (importStatus === "completed" ||
+            importStatus === "stopped" ||
+            modalMessage === "Se borraron todas las imágenes." ||
+            modalMessage === "Error al borrar imágenes.")) && (
+          <button
+            onClick={() => {
+              setStatusModalOpen(false);
+              navigate('/gallery');
+            }}
+            className="admin-modal-confirm-button"
+          >
+            Continuar
+          </button>
+        )}
       </Modal>
     </div>
   );

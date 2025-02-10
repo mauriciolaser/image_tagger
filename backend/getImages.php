@@ -34,10 +34,10 @@ if ($page < 1) {
 
 $offset = ($page - 1) * $imagesPerPage;
 
-// Consulta SQL para obtener imágenes sin tags
-// (Se omite el campo 'path' para no exponer la ruta interna)
+// Consulta SQL para obtener imágenes que no estén archivadas
 $sql = "SELECT id, filename, original_name, uploaded_at 
         FROM images 
+        WHERE archived = 0 
         ORDER BY uploaded_at DESC 
         LIMIT ?, ?";
 $stmt = $conn->prepare($sql);
@@ -48,12 +48,10 @@ $result = $stmt->get_result();
 $images = [];
 
 // Definir la URL pública base para servir imágenes
-// Se puede definir en .env como PUBLIC_URL_BASE; si no, se usa el valor por defecto.
 $publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
 
 while ($row = $result->fetch_assoc()) {
     $row['public_url'] = $publicUrlBase . "getImage.php?file=" . urlencode($row['filename']);
-    
     $images[] = $row;
 }
 

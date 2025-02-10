@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS images (
     file_hash VARCHAR(64) NOT NULL UNIQUE,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     uploaded_by INT UNSIGNED DEFAULT NULL,
+    archived BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -57,8 +58,10 @@ CREATE TABLE IF NOT EXISTS import_jobs (
 
 -- Crear la tabla de cola de importación de imágenes (batches)
 CREATE TABLE IF NOT EXISTS image_queue (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    filename VARCHAR(255) NOT NULL,
-    status ENUM('pending', 'processing', 'done', 'error') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    filename VARCHAR(255) COLLATE latin1_swedish_ci NOT NULL,
+    status ENUM('pending', 'processing', 'done', 'error') COLLATE latin1_swedish_ci DEFAULT 'pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    job_id INT(11) NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;

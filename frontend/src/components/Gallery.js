@@ -13,6 +13,12 @@ const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [confirmDeleteModalOpen, setConfirmDeleteModalOpen] = useState(false);
   const [successDeleteModalOpen, setSuccessDeleteModalOpen] = useState(false);
+  
+  // Estados para el modal de archivar
+  const [confirmArchiveModalOpen, setConfirmArchiveModalOpen] = useState(false);
+  const [successArchiveModalOpen, setSuccessArchiveModalOpen] = useState(false);
+  const [archiveImageName, setArchiveImageName] = useState('');
+
   const [deleteImageName, setDeleteImageName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const imagesPerPage = 20;
@@ -24,13 +30,12 @@ const Gallery = () => {
     fetchImages(1);
   }, []);
 
-  // Cada vez que cambie allImages o currentPage, actualizamos las imágenes mostradas
+  // Actualiza las imágenes mostradas cuando cambian allImages o currentPage
   useEffect(() => {
-    // Mostramos las imágenes hasta el índice correspondiente a currentPage * imagesPerPage
     setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
   }, [allImages, currentPage]);
 
-  // Función que solicita la página de imágenes (se asume que el backend soporta ?page=)
+  // Función para solicitar una página de imágenes
   const fetchImages = async (page) => {
     try {
       const response = await axios.get(API_URL, {
@@ -38,7 +43,6 @@ const Gallery = () => {
       });
       
       if (response.data && Array.isArray(response.data.images)) {
-        // Si es la primera página, reemplazamos; si no, agregamos
         if (page === 1) {
           setAllImages(response.data.images);
         } else {
@@ -51,17 +55,16 @@ const Gallery = () => {
   };
 
   // Genera la URL de la imagen usando el endpoint del API
-// Genera la URL de la imagen usando el endpoint del API
-const getImageUrl = (filename) => {
-  return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
-};
+  const getImageUrl = (filename) => {
+    return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
+  };
 
   // Maneja la selección de imagen para mostrar el preview
   const handleSelectImage = (image) => {
     setSelectedImage(image);
   };
 
-  // Abre el modal de confirmación de borrado para la imagen seleccionada
+  // Abrir modal de confirmación para borrar imagen
   const openConfirmDeleteModal = () => {
     if (selectedImage) {
       setDeleteImageName(selectedImage.original_name || selectedImage.filename);
@@ -73,19 +76,16 @@ const getImageUrl = (filename) => {
   const deleteImage = async () => {
     if (!selectedImage) return;
     try {
-      const response = await axios.delete(`${API_URL}/index.php?action=deleteImage`, {
+      const response = await axios.delete(`${API_URL}?action=deleteImage`, {
         data: { image_id: selectedImage.id }
       });
-      
       
       if (response.data.success) {
         setConfirmDeleteModalOpen(false);
         setSuccessDeleteModalOpen(true);
-        // Elimina la imagen eliminada del array allImages
+        // Remover la imagen eliminada de la lista
         setAllImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
-        // También elimina de displayedImages
         setDisplayedImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
-        // Limpia la imagen seleccionada
         setSelectedImage(null);
       } else {
         alert(response.data.message || 'Error al eliminar la imagen.');
@@ -93,6 +93,37 @@ const getImageUrl = (filename) => {
     } catch (error) {
       console.error('Error deleting image:', error);
       alert('Error deleting image.');
+    }
+  };
+
+  // Abrir modal de confirmación para archivar imagen
+  const openConfirmArchiveModal = () => {
+    if (selectedImage) {
+      setArchiveImageName(selectedImage.original_name || selectedImage.filename);
+      setConfirmArchiveModalOpen(true);
+    }
+  };
+
+  // Función para archivar la imagen seleccionada
+  const archiveImage = async () => {
+    if (!selectedImage) return;
+    try {
+      const response = await axios.post(`${API_URL}?action=archiveImage`, { image_id: selectedImage.id });
+      
+      if (response.data.success) {
+        setConfirmArchiveModalOpen(false);
+        setSuccessArchiveModalOpen(true);
+        // Remover la imagen archivada de la lista
+        setAllImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
+        setDisplayedImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
+        // Deseleccionamos la imagen
+        setSelectedImage(null);
+      } else {
+        alert(response.data.message || 'Error al archivar la imagen.');
+      }
+    } catch (error) {
+      console.error('Error archiving image:', error);
+      alert('Error al archivar la imagen.');
     }
   };
 
@@ -161,13 +192,19 @@ const getImageUrl = (filename) => {
               alt={selectedImage.original_name || selectedImage.filename}
               className="gallery-preview-image"
             />
-            <button className="gallery-delete-button" onClick={openConfirmDeleteModal}>
-              Borrar Imagen
-            </button>
+            <div className="gallery-preview-buttons">
+              <button className="gallery-archive-button" onClick={openConfirmArchiveModal}>
+                Archivar Imagen
+              </button>
+              <button className="gallery-delete-button" onClick={openConfirmDeleteModal}>
+                Borrar Imagen
+              </button>
+            </div>
           </div>
         )}
       </div>
 
+      {/* Modal de Confirmación para Borrar */}
       <Modal
         isOpen={confirmDeleteModalOpen}
         className="gallery-modal-content"
@@ -186,6 +223,26 @@ const getImageUrl = (filename) => {
         </div>
       </Modal>
 
+      {/* Modal de Confirmación para Archivar */}
+      <Modal
+        isOpen={confirmArchiveModalOpen}
+        className="gallery-modal-content"
+        overlayClassName="gallery-modal-overlay"
+      >
+        <h2 className="gallery-modal-title">
+          ¿Archivar esta imagen "{archiveImageName}"?
+        </h2>
+        <div className="gallery-modal-buttons">
+          <button className="gallery-modal-confirm" onClick={archiveImage}>
+            Continuar
+          </button>
+          <button className="gallery-modal-cancel" onClick={() => setConfirmArchiveModalOpen(false)}>
+            Cancelar
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal de Éxito al Borrar */}
       <Modal
         isOpen={successDeleteModalOpen}
         className="gallery-modal-content"
@@ -195,6 +252,20 @@ const getImageUrl = (filename) => {
           Se borró exitosamente la imagen "{deleteImageName}"
         </h2>
         <button className="gallery-modal-close" onClick={() => setSuccessDeleteModalOpen(false)}>
+          Cerrar
+        </button>
+      </Modal>
+
+      {/* Modal de Éxito al Archivar */}
+      <Modal
+        isOpen={successArchiveModalOpen}
+        className="gallery-modal-content"
+        overlayClassName="gallery-modal-overlay"
+      >
+        <h2 className="gallery-modal-title">
+          Se archivó exitosamente la imagen "{archiveImageName}"
+        </h2>
+        <button className="gallery-modal-close" onClick={() => setSuccessArchiveModalOpen(false)}>
           Cerrar
         </button>
       </Modal>

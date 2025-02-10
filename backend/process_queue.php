@@ -31,50 +31,70 @@ if (!$job_id) {
 // Marcar el job como "running"
 $conn->query("UPDATE import_jobs SET status = 'running' WHERE id = $job_id");
 
-$batchSize = 5; // Procesar 5 imágenes por ciclo
+$batchSize = 5;      // Procesar 5 imágenes por ciclo
+$maxAttempts = 10;   // Máximo de intentos antes de detener el proceso
+$attempts = 0;
 
 while (true) {
-    // Verificar si el job fue detenido
+    // Verificar si el job fue detenido manualmente (status = 'stopped')
     $result = $conn->query("SELECT status FROM import_jobs WHERE id = $job_id");
     if ($result->num_rows === 0 || $result->fetch_assoc()['status'] === 'stopped') {
-        break; // Salir si el proceso fue detenido
+        error_log("Proceso detenido manualmente o job no existe.");
+        break;
     }
 
-    // Obtener imágenes pendientes
-    $result = $conn->query("SELECT id, filename FROM image_queue WHERE status = 'pending' LIMIT $batchSize");
+    // Obtener imágenes pendientes para este job
+    $result = $conn->query("
+        SELECT id, filename 
+        FROM image_queue 
+        WHERE status = 'pending' 
+          AND job_id = $job_id
+        LIMIT $batchSize
+    ");
+    
     if ($result->num_rows === 0) {
-        break; // No hay más imágenes pendientes
+        $attempts++;
+        error_log("No hay más imágenes pendientes. Intento: $attempts");
+        
+        // Si después de varios intentos no hay pendientes, marcamos el job como completado
+        if ($attempts >= $maxAttempts) {
+            error_log("Máximo de intentos alcanzado. Cerrando proceso.");
+            break;
+        }
+        sleep(2);
+        continue;
     }
+
+    $attempts = 0; // Reiniciar contador de intentos
 
     while ($row = $result->fetch_assoc()) {
         $queueId = $row['id'];
         $filename = $row['filename'];
-        $sourcePath = $_ENV['PRIVATE_IMAGES_DIR'] . '/' . $filename;
-        $destination = $_ENV['BACKEND_BASE_PATH'] . '/uploads/' . $filename;
 
-        // Marcar como "processing"
+        // Marcar la imagen como "processing"
         $conn->query("UPDATE image_queue SET status = 'processing' WHERE id = $queueId");
 
-        // Verificar si el archivo existe antes de moverlo
-        if (file_exists($sourcePath) && rename($sourcePath, $destination)) {
-            // Insertar en la tabla de imágenes
-            $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $filename, $filename, $destination);
-            $stmt->execute();
-            $stmt->close();
-
-            // Marcar como "done"
+        // Insertar en la tabla de imágenes
+        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $filename, $filename, $_ENV['PRIVATE_IMAGES_DIR']);
+        
+        if ($stmt->execute()) {
             $conn->query("UPDATE image_queue SET status = 'done' WHERE id = $queueId");
         } else {
+            error_log("Error al insertar imagen en BD: " . $stmt->error);
             $conn->query("UPDATE image_queue SET status = 'error' WHERE id = $queueId");
         }
+
+        $stmt->close();
     }
 
-    sleep(2); // Pequeña pausa para evitar sobrecargar el servidor
+    // Pausa para evitar saturar el servidor
+    sleep(2);
 }
 
-// Marcar el job como "completed"
+// Marcar el job como "completed" si no está stopped
 $conn->query("UPDATE import_jobs SET status = 'completed' WHERE id = $job_id");
 
 $conn->close();
+error_log("Proceso finalizado para el job_id: $job_id.");
 ?>

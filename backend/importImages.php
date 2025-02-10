@@ -141,7 +141,8 @@ foreach ($files as $file) {
     
     // Registrar la imagen en la base de datos
     try {
-        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path, uploaded_by) VALUES (?, ?, ?, ?)");
+        // Se incluye el campo archived con valor FALSE (0)
+        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path, uploaded_by, archived) VALUES (?, ?, ?, ?, 0)");
         $pathForDB = 'uploads/' . $newFilename; // Ruta relativa para la BD
         $stmt->bind_param("sssi", $newFilename, $originalName, $pathForDB, $user_id);
         $stmt->execute();
