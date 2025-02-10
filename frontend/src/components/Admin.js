@@ -23,6 +23,7 @@ const Admin = () => {
   const [importStatus, setImportStatus] = useState('');
   const API_URL = process.env.REACT_APP_API_URL;
 
+  // Al iniciar, se leen los datos del usuario desde localStorage.
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) setLoggedUser(storedUser);
@@ -30,16 +31,17 @@ const Admin = () => {
     if (storedUserId) setUserId(storedUserId);
   }, []);
 
-  // Monitoreo del estado de importación usando jobId
+  // Monitoreo del estado de importación mientras haya un job pendiente.
   useEffect(() => {
     let interval;
     if (jobId) {
       interval = setInterval(async () => {
         try {
-          // Se utiliza job_id para consultar el estado
+          // Consultar el estado del job usando job_id.
           const response = await axios.get(`${API_URL}?action=importStatus&job_id=${jobId}`);
           if (response.data.success) {
             setImportStatus(response.data.status);
+            // Cuando el job se completa o se detiene, se borra el job pendiente.
             if (response.data.status === "completed" || response.data.status === "stopped") {
               clearInterval(interval);
               setJobId(null);
@@ -89,24 +91,28 @@ const Admin = () => {
     }
 
     try {
-      // Iniciar importación llamando a startImport con user_id
       setImportLoading(true);
+      // Se inicia la importación solicitando al backend que inicie el job.
       const response = await axios.get(`${API_URL}?action=startImport&user_id=${userId}`);
-
       if (response.data.success) {
-        // Se obtiene y almacena el job_id para el monitoreo
+        // Se almacena el job_id y se marca el estado como "running".
         setJobId(response.data.job_id);
         setImportStatus("running");
-        setModalMessage("Importación en proceso...");
+        // Se muestra el mensaje de inicio de importación.
+        setModalMessage("La importación ha comenzado. Puedes cerrar esta ventana");
+        setImportModalOpen(false);
+        setStatusModalOpen(true);
       } else {
         setModalMessage(response.data.message || "Error al iniciar la importación.");
+        setImportModalOpen(false);
+        setStatusModalOpen(true);
       }
     } catch (error) {
       setModalMessage("Error al importar imágenes.");
-    } finally {
-      setImportLoading(false);
       setImportModalOpen(false);
       setStatusModalOpen(true);
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -127,7 +133,6 @@ const Admin = () => {
     }
   };
 
-  // Nueva función para limpiar la base de datos
   const handleClearDatabase = async () => {
     setClearDbLoading(true);
     try {
@@ -166,10 +171,10 @@ const Admin = () => {
         <button onClick={handleExport} disabled={deleteLoading || importLoading} className="export-button">
           Exportar
         </button>
-        <button onClick={() => setImportModalOpen(true)} disabled={importLoading} className="import-button">
+        {/* El botón de importar queda inhabilitado si ya hay un job pendiente */}
+        <button onClick={() => setImportModalOpen(true)} disabled={importLoading || jobId} className="import-button">
           {importLoading ? "Importando..." : "Importar imágenes"}
         </button>
-        {/* Botón para limpiar la base de datos */}
         <button onClick={() => setClearDbModalOpen(true)} disabled={clearDbLoading} className="clear-db-button">
           {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
         </button>
@@ -214,7 +219,13 @@ const Admin = () => {
       {/* Modal de estado */}
       <Modal isOpen={statusModalOpen} onRequestClose={() => setStatusModalOpen(false)} className="admin-modal">
         <h2>{modalMessage}</h2>
-        {jobId && importStatus === "running" && (
+        {modalMessage === "La importación ha comenzado. Puedes cerrar esta ventana" ? (
+          // Si es el mensaje de inicio de importación, se muestra un único botón que cierra el modal.
+          <button onClick={() => setStatusModalOpen(false)} className="admin-modal-confirm-button">
+            Continuar
+          </button>
+        ) : jobId && importStatus === "running" ? (
+          // Mientras se está importando, se muestran opciones para cancelar o cerrar el modal.
           <>
             <p>Estado: {importStatus}</p>
             <button onClick={handleCancelImport} className="admin-modal-cancel-button">
@@ -224,17 +235,19 @@ const Admin = () => {
               Cerrar
             </button>
           </>
-        )}
-        {(!jobId &&
-          (importStatus === "completed" ||
-            importStatus === "stopped" ||
-            modalMessage === "Se borraron todas las imágenes." ||
-            modalMessage === "Error al borrar imágenes." ||
-            modalMessage === "Se han borrado los registros de imágenes, tags y relaciones de tags. Recuerda que tendrás que importar nuevamente las imágenes.")) && (
+        ) : (
+          // En otros casos (p.ej., tras borrar o exportar), se muestra un botón que cierra el modal y, en ciertos mensajes, redirige a la galería.
           <button
             onClick={() => {
               setStatusModalOpen(false);
-              navigate('/gallery');
+              if (
+                modalMessage === "Se borraron todas las imágenes." ||
+                modalMessage === "Error al borrar imágenes." ||
+                modalMessage === "Se han borrado los registros de imágenes, tags y relaciones de tags." ||
+                modalMessage === "Importación completada."
+              ) {
+                navigate('/gallery');
+              }
             }}
             className="admin-modal-confirm-button"
           >
@@ -242,6 +255,13 @@ const Admin = () => {
           </button>
         )}
       </Modal>
+
+      {/* Banner de estado de importación en la esquina inferior derecha */}
+      {jobId && importStatus === "running" && (
+        <div className="import-status-banner">
+          <p>Importación en curso...</p>
+        </div>
+      )}
     </div>
   );
 };
