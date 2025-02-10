@@ -10,6 +10,8 @@ const Tag = () => {
   const [filteredImages, setFilteredImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImageTags, setSelectedImageTags] = useState([]);
+  const [selectedImageOtherTags, setSelectedImageOtherTags] = useState([]); // Nuevos tags de otros
+  const [showOtherTags, setShowOtherTags] = useState(false); // Controla si se muestran los tags de otros
   const [tagText, setTagText] = useState('');
   const [message, setMessage] = useState('');
   const [userId, setUserId] = useState(null);
@@ -22,7 +24,7 @@ const Tag = () => {
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
 
-  // Genera la URL pública de la imagen (igual que en Gallery)
+  // Genera la URL pública de la imagen
   const getImageUrl = (filename) => {
     return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
   };
@@ -40,6 +42,9 @@ const Tag = () => {
   useEffect(() => {
     if (selectedImage) {
       fetchImageTags(selectedImage.id);
+      // Cada vez que se selecciona una imagen, se oculta la sección de tags de otros
+      setShowOtherTags(false);
+      setSelectedImageOtherTags([]);
     }
   }, [selectedImage]);
 
@@ -79,14 +84,18 @@ const Tag = () => {
     }
   };
 
-  // Llama a getImageTags pasando image_id para obtener los tags de la imagen seleccionada
+  // Obtiene los tags agregados por el usuario actual
   const fetchImageTags = async (imageId) => {
     if (!userId) return;
     try {
       const response = await axios.get(API_URL, {
         params: { action: "getImageTags", image_id: imageId, user_id: userId },
       });
-      if (response.data && Array.isArray(response.data.images) && response.data.images.length > 0) {
+      if (
+        response.data &&
+        Array.isArray(response.data.images) &&
+        response.data.images.length > 0
+      ) {
         const image = response.data.images[0];
         setSelectedImageTags(image?.tags || []);
       } else {
@@ -95,6 +104,29 @@ const Tag = () => {
     } catch (error) {
       console.error("Error fetching image tags:", error);
       setSelectedImageTags([]);
+    }
+  };
+
+  // Obtiene los tags agregados por otros usuarios
+  const fetchOtherImageTags = async (imageId) => {
+    if (!userId) return;
+    try {
+      const response = await axios.get(API_URL, {
+        params: { action: "getImageTags", image_id: imageId, user_id: userId, others: 1 },
+      });
+      if (
+        response.data &&
+        Array.isArray(response.data.images) &&
+        response.data.images.length > 0
+      ) {
+        const image = response.data.images[0];
+        setSelectedImageOtherTags(image?.tags || []);
+      } else {
+        setSelectedImageOtherTags([]);
+      }
+    } catch (error) {
+      console.error("Error fetching other image tags:", error);
+      setSelectedImageOtherTags([]);
     }
   };
 
@@ -213,7 +245,7 @@ const Tag = () => {
             <p className="tag-preview-id">ID: {selectedImage.id}</p>
             <div className="tag-management">
               <div className="tag-list-container">
-                <h4 className="tag-list-title">Tags agregados:</h4>
+                <h4 className="tag-list-title">Tags agregados por mí:</h4>
                 {selectedImageTags.length > 0 ? (
                   <ul className="tag-list">
                     {selectedImageTags.map((tag) => (
@@ -230,6 +262,37 @@ const Tag = () => {
                   </ul>
                 ) : (
                   <p className="tag-empty-message">No hay tags para esta imagen.</p>
+                )}
+              </div>
+              {/* Sección oculta para mostrar los tags de otros usuarios */}
+              <div className="tag-list-others">
+                <div 
+                  className="tag-list-others-header"
+                  onClick={() => {
+                    setShowOtherTags(!showOtherTags);
+                    // Si se abre la sección, se solicita la información
+                    if (!showOtherTags) {
+                      fetchOtherImageTags(selectedImage.id);
+                    }
+                  }}
+                  style={{ cursor: "pointer", marginTop: "1rem" }}
+                >
+                  <span className="toggle-icon">{showOtherTags ? '−' : '+'}</span> Tags de otros
+                </div>
+                {showOtherTags && (
+                  <div className="tag-list-others-content">
+                    {selectedImageOtherTags.length > 0 ? (
+                      <ul className="tag-list">
+                        {selectedImageOtherTags.map((tag) => (
+                          <li key={tag.id} className="tag-list-item">
+                            <span className="tag-item-name">{tag.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="tag-empty-message">No hay tags de otros usuarios.</p>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="tag-input-wrapper">
