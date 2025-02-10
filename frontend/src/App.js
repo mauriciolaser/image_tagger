@@ -7,13 +7,15 @@ import AdminPage from './pages/AdminPage';
 import TagPage from './pages/TagPage';
 import UploadPage from './pages/UploadPage';
 import ProtectedRoute from './ProtectedRoute';
+import ShowcasePage from './pages/ShowcasePage'
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  
+  const hideNavbarRoutes = ["/login", "/showcase"]; // Rutas donde no se muestra el Navbar
+
   return (
     <>
-      {location.pathname !== "/login" && <Navbar />}
+      {!hideNavbarRoutes.includes(location.pathname) && <Navbar />}
       {children}
     </>
   );
@@ -25,6 +27,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/showcase" element={<ShowcasePage />} />
 
           <Route
             path="/*"

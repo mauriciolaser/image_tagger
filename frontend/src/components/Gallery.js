@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import './Gallery.css';
 
 // Configura el elemento raíz para react-modal
@@ -274,16 +275,46 @@ const Gallery = () => {
         </button>
       </Modal>
 
-      {/* Vista a pantalla completa de la imagen */}
+      {/* Vista a pantalla completa con zoom y paneo */}
       {isFullScreen && selectedImage && (
-        <div className="fullscreen-overlay" onClick={() => setIsFullScreen(false)}>
-          <img
-            src={getImageUrl(selectedImage.filename)}
-            alt={selectedImage.original_name || selectedImage.filename}
-            className="fullscreen-image"
-          />
-        </div>
+  <div
+    className="fullscreen-overlay"
+    onClick={(e) => {
+      // Solo cierra si se hizo clic en el overlay (no en un elemento hijo)
+      if (e.target === e.currentTarget) {
+        setIsFullScreen(false);
+      }
+    }}
+  >
+    <TransformWrapper
+      limitToBounds={false} // Permite mover la imagen fuera de los límites iniciales
+      wrapperStyle={{ width: '100%', height: '100%' }} // El área de zoom ocupa todo el overlay
+      defaultScale={1}
+      defaultPositionX={0}
+      defaultPositionY={0}
+    >
+      {({ zoomIn, zoomOut, resetTransform }) => (
+        <>
+          {/* Controles de zoom y paneo */}
+          <div className="fullscreen-controls" onClick={(e) => e.stopPropagation()}>
+            <button onClick={(e) => { e.stopPropagation(); zoomIn(); }}>+</button>
+            <button onClick={(e) => { e.stopPropagation(); zoomOut(); }}>-</button>
+            <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>Reset</button>
+          </div>
+          <TransformComponent>
+            <img
+              src={getImageUrl(selectedImage.filename)}
+              alt={selectedImage.original_name || selectedImage.filename}
+              className="fullscreen-image"
+              onClick={(e) => e.stopPropagation()} // Evita que el clic en la imagen se propague al overlay
+            />
+          </TransformComponent>
+        </>
       )}
+    </TransformWrapper>
+  </div>
+)}
+
     </div>
   );
 };

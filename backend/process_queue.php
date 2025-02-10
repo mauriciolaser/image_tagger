@@ -31,7 +31,7 @@ if (!$job_id) {
 // Marcar el job como "running"
 $conn->query("UPDATE import_jobs SET status = 'running' WHERE id = $job_id");
 
-$batchSize = 5;      // Procesar 5 imágenes por ciclo
+$batchSize = 25;      // Procesar 5 imágenes por ciclo
 $maxAttempts = 10;   // Máximo de intentos antes de detener el proceso
 $attempts = 0;
 

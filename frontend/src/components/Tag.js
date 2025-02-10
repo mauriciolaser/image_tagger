@@ -1,34 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import './Tag.css';
 
 Modal.setAppElement('#root');
 
 const Tags = () => {
-  // Estados para la carga de imágenes y paginación (igual que en Gallery)
+  // Estados para carga de imágenes, paginación y filtrado
   const [allImages, setAllImages] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const imagesPerPage = 20;
-
-  // Estado para el filtro de la grilla: "all" (Todas), "with" (Con Tags) o "without" (Sin Tags)
   const [filter, setFilter] = useState("all");
-  // Mapeo de image_id a su arreglo de tags (obtenido de getAllTags)
   const [imageTagsMap, setImageTagsMap] = useState({});
 
-  // Estados para la imagen seleccionada y sus tags (consulta individual para el usuario)
+  // Estados para imagen seleccionada y sus tags
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImageTags, setSelectedImageTags] = useState([]);
   const [selectedImageOtherTags, setSelectedImageOtherTags] = useState([]);
   const [showOtherTags, setShowOtherTags] = useState(false);
 
-  // Otros estados para agregar tags, mostrar mensajes, modal, etc.
+  // Otros estados para el manejo de tags, mensajes y modal
   const [tagText, setTagText] = useState('');
   const [message, setMessage] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [userId, setUserId] = useState(null);
+
+  // Estado para la vista fullscreen de la imagen
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
@@ -48,19 +49,19 @@ const Tags = () => {
     }
   }, []);
 
-  // Una vez obtenido el user_id, se cargan las imágenes mediante la acción "getImages"
+  // Una vez obtenido el user_id, se cargan las imágenes
   useEffect(() => {
     if (userId) {
       fetchImages(1, true);
     }
   }, [userId]);
 
-  // Cada vez que cambian allImages o currentPage, se actualiza el listado mostrado
+  // Actualiza las imágenes mostradas en función de la paginación
   useEffect(() => {
     setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
   }, [allImages, currentPage]);
 
-  // Función para cargar imágenes (sin cambios respecto a tu código original)
+  // Función para cargar imágenes
   const fetchImages = async (page, reset = false) => {
     try {
       const response = await axios.get(API_URL, {
@@ -79,8 +80,7 @@ const Tags = () => {
     }
   };
 
-  // Función para llamar al endpoint getAllTags para un listado de imágenes
-  // Se espera recibir un array de IDs de imágenes y se construye el parámetro image_ids
+  // Función para llamar al endpoint getAllTags para obtener tags de imágenes
   const fetchAllTagsForGrid = async (imageIds) => {
     try {
       const response = await axios.get(API_URL, {
@@ -90,7 +90,6 @@ const Tags = () => {
         }
       });
       if (response.data.success) {
-        // Se actualiza el state fusionando los tags recibidos con los ya almacenados
         setImageTagsMap(prev => ({ ...prev, ...response.data.tags }));
       }
     } catch (error) {
@@ -101,7 +100,6 @@ const Tags = () => {
   // Cuando se actualizan las imágenes mostradas, se consulta el endpoint para obtener los tags
   useEffect(() => {
     if (userId && displayedImages.length > 0) {
-      // Se seleccionan aquellas imágenes para las cuales aún no se han obtenido tags
       const idsToFetch = displayedImages
         .map(image => image.id)
         .filter(id => !(id in imageTagsMap));
@@ -111,7 +109,7 @@ const Tags = () => {
     }
   }, [displayedImages, userId, imageTagsMap]);
 
-  // Se filtran las imágenes mostradas en la grilla según el estado filter y la info en imageTagsMap
+  // Se filtran las imágenes mostradas según el estado filter
   const filteredImages = displayedImages.filter(image => {
     const tags = imageTagsMap[image.id] || [];
     if (filter === "all") return true;
@@ -120,16 +118,15 @@ const Tags = () => {
     return true;
   });
 
-  // Al seleccionar una imagen, se guarda en selectedImage y se consultan sus tags (acción individual)
+  // Al seleccionar una imagen se guarda y se consultan sus tags
   const handleSelectImage = (image) => {
     setSelectedImage(image);
     fetchImageTags(image.id);
-    // Reinicia la sección de tags de otros
     setShowOtherTags(false);
     setSelectedImageOtherTags([]);
   };
 
-  // Consulta los tags asignados por el usuario para la imagen seleccionada (acción getImageTags)
+  // Consulta los tags asignados por el usuario para la imagen seleccionada
   const fetchImageTags = async (imageId) => {
     if (!userId) return;
     try {
@@ -148,7 +145,7 @@ const Tags = () => {
     }
   };
 
-  // Consulta los tags asignados por otros usuarios para la imagen seleccionada (others=1)
+  // Consulta los tags asignados por otros usuarios para la imagen seleccionada
   const fetchOtherImageTags = async (imageId) => {
     if (!userId) return;
     try {
@@ -180,7 +177,6 @@ const Tags = () => {
       });
       if (response.data.success) {
         await fetchImageTags(selectedImage.id);
-        // Actualiza la grilla para reflejar el nuevo tag en la imagen seleccionada
         fetchAllTagsForGrid([selectedImage.id]);
         setModalMessage(`Tag: ${tagText.trim()} agregado`);
         setModalOpen(true);
@@ -206,7 +202,6 @@ const Tags = () => {
       });
       if (response.data.success) {
         await fetchImageTags(selectedImage.id);
-        // Actualiza la grilla para reflejar la eliminación en la imagen seleccionada
         fetchAllTagsForGrid([selectedImage.id]);
         setModalMessage(`Borraste el tag "${tagName}"`);
         setModalOpen(true);
@@ -251,10 +246,14 @@ const Tags = () => {
             Sin Tags
           </button>
         </div>
-        {/* Grilla de imágenes (se muestran las filtradas) */}
+        {/* Grilla de imágenes filtradas */}
         <div className="tag-images-grid">
           {filteredImages.map(image => (
-            <div key={image.id} className="tag-thumbnail" onClick={() => handleSelectImage(image)}>
+            <div
+              key={image.id}
+              className="tag-thumbnail"
+              onClick={() => handleSelectImage(image)}
+            >
               <img
                 src={getImageUrl(image.filename)}
                 alt={image.original_name || image.filename}
@@ -278,10 +277,12 @@ const Tags = () => {
           <div className="tag-preview-container">
             <h3>Imagen Seleccionada</h3>
             <p>{selectedImage.original_name || selectedImage.filename}</p>
+            {/* Al hacer clic en la imagen se activa la vista fullscreen */}
             <img
               src={getImageUrl(selectedImage.filename)}
               alt={selectedImage.original_name || selectedImage.filename}
               className="tag-preview-image"
+              onClick={() => setIsFullScreen(true)}
             />
             <div className="tag-management">
               <div className="tag-list-container">
@@ -304,7 +305,7 @@ const Tags = () => {
                   <p className="tag-empty-message">No hay tags para esta imagen.</p>
                 )}
               </div>
-              {/* Sección colapsable para mostrar los tags de otros usuarios */}
+              {/* Sección colapsable para mostrar tags de otros usuarios */}
               <div className="tag-list-others">
                 <div
                   className="tag-list-others-header"
@@ -350,6 +351,46 @@ const Tags = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Vista fullscreen de la imagen con zoom y paneo */}
+      {isFullScreen && selectedImage && (
+        <div
+          className="fullscreen-overlay"
+          onClick={(e) => {
+            // Se cierra la vista fullscreen solo si se hace clic fuera de la imagen
+            if (e.target === e.currentTarget) {
+              setIsFullScreen(false);
+            }
+          }}
+        >
+          <TransformWrapper
+            limitToBounds={false} // Permite mover la imagen fuera de sus límites iniciales
+            wrapperStyle={{ width: '100%', height: '100%' }} // El área de zoom ocupa todo el overlay
+            defaultScale={1}
+            defaultPositionX={0}
+            defaultPositionY={0}
+          >
+            {({ zoomIn, zoomOut, resetTransform }) => (
+              <>
+                {/* Controles de zoom y paneo */}
+                <div className="fullscreen-controls" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={(e) => { e.stopPropagation(); zoomIn(); }}>+</button>
+                  <button onClick={(e) => { e.stopPropagation(); zoomOut(); }}>-</button>
+                  <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>Reset</button>
+                </div>
+                <TransformComponent>
+                  <img
+                    src={getImageUrl(selectedImage.filename)}
+                    alt={selectedImage.original_name || selectedImage.filename}
+                    className="fullscreen-image"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TransformComponent>
+              </>
+            )}
+          </TransformWrapper>
         </div>
       )}
       

@@ -21,11 +21,13 @@ if ($conn->connect_error) {
     die("Database connection error: " . $conn->connect_error);
 }
 
-// Consulta para obtener todas las imágenes y TODOS los tags asociados a cada imagen
+// Consulta para obtener todas las imágenes y TODOS los tags asociados a cada imagen,
+// junto con el campo archived (0 o 1)
 $sql = "
 SELECT 
     i.id, 
     i.original_name, 
+    i.archived,
     IFNULL(GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', '), '') AS tags
 FROM images i
 LEFT JOIN image_tags it ON i.id = it.image_id
@@ -42,11 +44,19 @@ $result = $stmt->get_result();
 $output = fopen('php://output', 'w');
 
 // Escribir la cabecera del CSV
-fputcsv($output, ['ID Imagen', 'Nombre de Imagen', 'Tags']);
+fputcsv($output, ['ID Imagen', 'Nombre de Imagen', 'Tags', 'Archived']);
 
 // Recorrer los resultados y escribir cada línea en el CSV
 while ($row = $result->fetch_assoc()) {
-    fputcsv($output, [$row['id'], $row['original_name'], $row['tags']]);
+    // Convertir el valor booleano (0 o 1) en una cadena "FALSE" o "TRUE"
+    $archivedLabel = ($row['archived'] == 1) ? 'TRUE' : 'FALSE';
+
+    fputcsv($output, [
+        $row['id'],
+        $row['original_name'],
+        $row['tags'],
+        $archivedLabel
+    ]);
 }
 
 fclose($output);
