@@ -13,8 +13,10 @@ const Admin = () => {
   const [userId, setUserId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
+  const [clearDbLoading, setClearDbLoading] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [clearDbModalOpen, setClearDbModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [jobId, setJobId] = useState(null);
@@ -103,7 +105,7 @@ const Admin = () => {
       setModalMessage("Error al importar imágenes.");
     } finally {
       setImportLoading(false);
-      setImportModalOpen(false); // Cierra el modal de importación para que no se vuelva a mostrar
+      setImportModalOpen(false);
       setStatusModalOpen(true);
     }
   };
@@ -121,6 +123,25 @@ const Admin = () => {
     } catch (error) {
       setModalMessage("Error deteniendo la importación.");
     } finally {
+      setStatusModalOpen(true);
+    }
+  };
+
+  // Nueva función para limpiar la base de datos
+  const handleClearDatabase = async () => {
+    setClearDbLoading(true);
+    try {
+      const response = await axios.delete(`${API_URL}?action=clearDatabase`);
+      setModalMessage(
+        response.data.success
+          ? response.data.message || "Base de datos limpia exitosamente."
+          : "Error al limpiar la base de datos."
+      );
+    } catch (error) {
+      setModalMessage("Error al limpiar la base de datos.");
+    } finally {
+      setClearDbLoading(false);
+      setClearDbModalOpen(false);
       setStatusModalOpen(true);
     }
   };
@@ -148,12 +169,16 @@ const Admin = () => {
         <button onClick={() => setImportModalOpen(true)} disabled={importLoading} className="import-button">
           {importLoading ? "Importando..." : "Importar imágenes"}
         </button>
+        {/* Botón para limpiar la base de datos */}
+        <button onClick={() => setClearDbModalOpen(true)} disabled={clearDbLoading} className="clear-db-button">
+          {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
+        </button>
         <button onClick={handleLogout} className="logout-button">
           Cerrar sesión
         </button>
       </div>
 
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de confirmación para borrar todas las imágenes */}
       <Modal isOpen={deleteModalOpen} onRequestClose={() => setDeleteModalOpen(false)} className="admin-modal">
         <h2>¿Borrar todas las imágenes?</h2>
         <button onClick={handleDeleteAllImages} className="admin-modal-confirm-button">
@@ -164,13 +189,24 @@ const Admin = () => {
         </button>
       </Modal>
 
-      {/* Modal de confirmación de importación */}
+      {/* Modal de confirmación para importar imágenes */}
       <Modal isOpen={importModalOpen} onRequestClose={() => setImportModalOpen(false)} className="admin-modal">
         <h2>¿Importar imágenes?</h2>
         <button onClick={handleImportImages} className="admin-modal-confirm-button">
           Sí, importar
         </button>
         <button onClick={() => setImportModalOpen(false)} className="admin-modal-cancel-button">
+          Cancelar
+        </button>
+      </Modal>
+
+      {/* Modal de confirmación para limpiar la base de datos */}
+      <Modal isOpen={clearDbModalOpen} onRequestClose={() => setClearDbModalOpen(false)} className="admin-modal">
+        <h2>Se borrarán imágenes y tags. Tendrás que importar nuevamente las imágenes.</h2>
+        <button onClick={handleClearDatabase} className="admin-modal-confirm-button">
+          Continuar
+        </button>
+        <button onClick={() => setClearDbModalOpen(false)} className="admin-modal-cancel-button">
           Cancelar
         </button>
       </Modal>
@@ -193,7 +229,8 @@ const Admin = () => {
           (importStatus === "completed" ||
             importStatus === "stopped" ||
             modalMessage === "Se borraron todas las imágenes." ||
-            modalMessage === "Error al borrar imágenes.")) && (
+            modalMessage === "Error al borrar imágenes." ||
+            modalMessage === "Se han borrado los registros de imágenes, tags y relaciones de tags. Recuerda que tendrás que importar nuevamente las imágenes.")) && (
           <button
             onClick={() => {
               setStatusModalOpen(false);

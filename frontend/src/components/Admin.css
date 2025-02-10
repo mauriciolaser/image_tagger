@@ -108,3 +108,12 @@
   padding: 10px;
   cursor: pointer;
 }
+
+.clear-db-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.clear-db-button:hover {
+  background-color: #5a6268;
+}

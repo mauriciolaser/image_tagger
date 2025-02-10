@@ -141,10 +141,10 @@ foreach ($files as $file) {
     
     // Registrar la imagen en la base de datos
     try {
-        // Se incluye el campo archived con valor FALSE (0)
-        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path, uploaded_by, archived) VALUES (?, ?, ?, ?, 0)");
+        // Se incluye el campo file_hash con el valor calculado y archived con valor FALSE (0)
+        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path, file_hash, uploaded_by, archived) VALUES (?, ?, ?, ?, ?, 0)");
         $pathForDB = 'uploads/' . $newFilename; // Ruta relativa para la BD
-        $stmt->bind_param("sssi", $newFilename, $originalName, $pathForDB, $user_id);
+        $stmt->bind_param("ssssi", $newFilename, $originalName, $pathForDB, $fileHash, $user_id);
         $stmt->execute();
         
         $results[] = [

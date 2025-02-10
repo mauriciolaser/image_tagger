@@ -45,7 +45,8 @@ $routes = [
     'getUserId'      => 'getUserId.php',
     'getAllTags'     => 'getAllTags.php',
     'importImages'   => 'importImages.php',
-    'tagImage'       => 'tagImage.php'
+    'tagImage'       => 'tagImage.php',
+    'clearDatabase'  => 'clearDatabase.php'
 ];
 
 // 🆕 Agregar nuevas rutas para importación en batches
