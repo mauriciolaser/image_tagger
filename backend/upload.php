@@ -78,14 +78,15 @@ foreach ($_FILES['images']['tmp_name'] as $key => $tmpName) {
     
     // Generar nombre único seguro
     $fileHash = hash_file('sha256', $tmpName);
-    $newFilename = $fileHash . '_' . bin2hex(random_bytes(4)) . '.webp';
+    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+    $newFilename = $fileHash . '_' . bin2hex(random_bytes(4)) . ($extension === 'webp' ? '.webp' : '.webp');
     $destination = $uploadDir . $newFilename;
 
     // Validar tipo MIME
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->file($tmpName);
     
-    if (!in_array($mime, ['image/jpeg', 'image/png'])) {
+    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
         $results[] = [
             "original_name" => $originalName,
             "success" => false,
@@ -94,24 +95,36 @@ foreach ($_FILES['images']['tmp_name'] as $key => $tmpName) {
         continue;
     }
 
-    // Convertir a WebP
-    try {
-        $img = match($mime) {
-            'image/jpeg' => imagecreatefromjpeg($tmpName),
-            'image/png' => imagecreatefrompng($tmpName),
-        };
-        
-        if (!imagewebp($img, $destination, 80)) {
-            throw new Exception("Error en conversión");
+    // Si el archivo ya es WebP, solo moverlo sin convertir
+    if ($mime === 'image/webp') {
+        if (!move_uploaded_file($tmpName, $destination)) {
+            $results[] = [
+                "original_name" => $originalName,
+                "success" => false,
+                "message" => "Error moviendo archivo WebP"
+            ];
+            continue;
         }
-        imagedestroy($img);
-    } catch (Exception $e) {
-        $results[] = [
-            "original_name" => $originalName,
-            "success" => false,
-            "message" => "Error procesando imagen"
-        ];
-        continue;
+    } else {
+        // Convertir a WebP
+        try {
+            $img = match($mime) {
+                'image/jpeg' => imagecreatefromjpeg($tmpName),
+                'image/png' => imagecreatefrompng($tmpName),
+            };
+            
+            if (!imagewebp($img, $destination, 80)) {
+                throw new Exception("Error en conversión");
+            }
+            imagedestroy($img);
+        } catch (Exception $e) {
+            $results[] = [
+                "original_name" => $originalName,
+                "success" => false,
+                "message" => "Error procesando imagen"
+            ];
+            continue;
+        }
     }
 
     // Registrar en BD

@@ -1,0 +1,32 @@
+
+.upload-progress-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 250px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+}
+
+.upload-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 5px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 5px;
+  background: #333;
+  border-radius: 3px;
+}
+
+.progress {
+  height: 100%;
+  background: #4caf50;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}

@@ -13,18 +13,21 @@ const ImageUpload = () => {
   const [statusMessage, setStatusMessage] = useState('');
   const [uploadModalMessage, setUploadModalMessage] = useState('');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [loggedUser, setLoggedUser] = useState("nombredeusuario");
   const API_URL = process.env.REACT_APP_API_URL;
-  
-  // Obtener user_id y username desde localStorage.
-  const userId = localStorage.getItem('user_id');  
-  const username = localStorage.getItem('username');
+
+  // Obtener el username desde localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('username');
+    console.log("LocalStorage username:", storedUser);
+    if (storedUser) {
+      setLoggedUser(storedUser);
+    }
+  }, []);
 
   useEffect(() => {
     let interval;
-    if (
-      statusMessage.startsWith("TRABAJANDO") ||
-      statusMessage.startsWith("FINALIZANDO")
-    ) {
+    if (statusMessage.startsWith("TRABAJANDO") || statusMessage.startsWith("FINALIZANDO")) {
       interval = setInterval(() => {
         setStatusMessage((prev) => {
           if (prev.endsWith("...")) return prev.slice(0, -3) + ".";
@@ -37,6 +40,15 @@ const ImageUpload = () => {
     return () => clearInterval(interval);
   }, [statusMessage]);
 
+  // Función auxiliar para dividir un array en chunks de tamaño chunkSize
+  const chunkArray = (array, chunkSize) => {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!files.length) {
@@ -44,39 +56,47 @@ const ImageUpload = () => {
       return;
     }
 
-    if (!userId) {
-      alert("Error: No se encontró user_id. Inicia sesión nuevamente.");
+    if (!loggedUser) {
+      alert("Error: No se encontró username. Inicia sesión nuevamente.");
       return;
     }
 
     console.log("Archivos a subir:", files);
 
-    const formData = new FormData();
-    files.forEach((file) => formData.append('images[]', file));
-    
-    // Enviar user_id en la solicitud
-    formData.append("user_id", userId);
-    formData.append("action", "upload"); // Se agrega la acción para que api.php sepa qué hacer
+    // Dividir los archivos en batches de 20
+    const batches = chunkArray(files, 20);
+    const totalBatches = batches.length;
+    let allResults = [];
 
     setLoading(true);
     setProgress(0);
-    setStatusMessage("Subiendo... 0%");
 
     try {
-      const response = await axios.post(`${API_URL}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setProgress(percentCompleted);
-          setStatusMessage(`Subiendo... ${percentCompleted}%`);
+      // Procesar cada batch de archivos
+      for (let i = 0; i < totalBatches; i++) {
+        const formData = new FormData();
+        batches[i].forEach((file) => formData.append('images[]', file));
 
-          if (percentCompleted === 100) {
-            setStatusMessage("TRABAJANDO EN EL SERVIDOR.");
-          }
-        },
-      });
+        // ⚠️ Enviar username y acción en cada solicitud
+        formData.append("username", loggedUser);
+        formData.append("action", "upload");
+
+        setStatusMessage(`Subiendo batch ${i + 1} de ${totalBatches}...`);
+
+        const response = await axios.post(API_URL, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            // Calcular el progreso global acumulado
+            const overallProgress = Math.round(((i * 100) + percentCompleted) / totalBatches);
+            setProgress(overallProgress);
+          },
+        });
+
+        if (response.data && Array.isArray(response.data.results)) {
+          allResults = allResults.concat(response.data.results);
+        }
+      }
 
       // Simular un pequeño tiempo de procesamiento antes de finalizar
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -90,24 +110,17 @@ const ImageUpload = () => {
       console.log("Procesamiento del servidor finalizado.");
       setStatusMessage("Listo.");
 
-      if (
-        response.data &&
-        Array.isArray(response.data.results) &&
-        response.data.results.length > 0
-      ) {
-        const successfulResults = response.data.results.filter((r) => r.success);
+      if (allResults && Array.isArray(allResults) && allResults.length > 0) {
+        const successfulResults = allResults.filter(r => r.success);
         let modalMessage = "";
 
         if (successfulResults.length > 1) {
           if (successfulResults.length > 10) {
-            const firstTenNames = successfulResults
-              .slice(0, 10)
-              .map((r) => r.original_name)
-              .join(', ');
+            const firstTenNames = successfulResults.slice(0, 10).map(r => r.original_name).join(', ');
             const extraCount = successfulResults.length - 10;
             modalMessage = `Se han subido ${successfulResults.length} imágenes: ${firstTenNames} y otras ${extraCount} imágenes extra.`;
           } else {
-            const names = successfulResults.map((r) => r.original_name).join(', ');
+            const names = successfulResults.map(r => r.original_name).join(', ');
             modalMessage = `Se han subido ${successfulResults.length} imágenes: ${names}`;
           }
         } else if (successfulResults.length === 1) {
@@ -136,13 +149,7 @@ const ImageUpload = () => {
   return (
     <div className="image-upload-container">
       <h1>Carga de Imágenes</h1>
-      {username ? (
-        <p>Usuario: {username}</p>
-      ) : (
-        <p style={{ color: 'red' }}>
-          ⚠️ Debes iniciar sesión para subir imágenes.
-        </p>
-      )}
+      {loggedUser ? <p>Usuario: {loggedUser}</p> : <p style={{ color: 'red' }}>⚠️ Debes iniciar sesión para subir imágenes.</p>}
       
       <form onSubmit={handleUpload}>
         <label htmlFor="fileInput">Selecciona las imágenes:</label>
@@ -153,9 +160,16 @@ const ImageUpload = () => {
           multiple
           onChange={(e) => setFiles([...e.target.files])}
         />
-        <button type="submit" disabled={loading || !userId}>
+        <button type="submit" disabled={loading || !loggedUser}>
           {loading ? "Subiendo..." : "Upload"}
         </button>
+
+        {/* Mostrar barra de progreso estilizada cuando esté cargando */}
+        {loading && (
+          <div className="progress-bar-container">
+            <div className="progress-bar" style={{ width: progress + '%' }}></div>
+          </div>
+        )}
 
         {/* Mostrar mensaje dinámico */}
         {statusMessage && <p>{statusMessage}</p>}

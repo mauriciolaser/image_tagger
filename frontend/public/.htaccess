@@ -1,3 +1,10 @@
+# --- Configuraciones PHP para permitir múltiples subidas ---
+php_value max_file_uploads 7000
+php_value upload_max_filesize 128M
+php_value post_max_size 512M
+php_value memory_limit 256M
+
+# --- Reglas de reescritura y seguridad ---
 # Habilitar el motor de reescritura
 RewriteEngine On
 RewriteBase /image_tagger/

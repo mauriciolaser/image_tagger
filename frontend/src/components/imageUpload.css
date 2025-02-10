@@ -1,125 +1,139 @@
-/* ImageUpload.css */
-
 /* Contenedor principal */
 .image-upload-container {
-    padding: 20px;
-    max-width: 800px;
-    margin: 0 auto;
-    box-sizing: border-box;
-  }
-  
-  /* Título principal */
-  .image-upload-container h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 2rem;
-  }
-  
-  /* Formulario de carga */
-  .image-upload-container form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-  
-  .image-upload-container form label {
-    font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 8px;
-  }
-  
-  .image-upload-container form input[type="file"] {
-    width: 100%;
-    max-width: 400px;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
-  
-  .image-upload-container form button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    font-size: 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    min-width: 150px;
-  }
-  
-  .image-upload-container form button:hover:not(:disabled) {
-    background-color: #0056b3;
-  }
-  
-  .image-upload-container form button:disabled {
-    background-color: #aaa;
-    cursor: not-allowed;
-  }
-  
-  /* Estilos para el modal de resultados */
-  .ReactModal__Overlay {
-    background-color: rgba(0, 0, 0, 0.5) !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .ReactModal__Content {
-    width: 400px;
-    max-width: 90%;
-    height: 200px;
-    margin: auto;
-    text-align: center;
-    border: none;
-    border-radius: 8px;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-  
-  /* Botón dentro del modal */
-  .ReactModal__Content button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    font-size: 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 20px;
-  }
-  
-  .ReactModal__Content button:hover {
-    background-color: #0056b3;
-  }
-  
-  /* Responsive: Para pantallas pequeñas */
-  @media (max-width: 600px) {
-    .image-upload-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Título principal */
+.image-upload-container h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+
+/* Formulario de carga */
+.image-upload-container form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.image-upload-container form label {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.image-upload-container form input[type="file"] {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.image-upload-container form button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  min-width: 150px;
+}
+
+.image-upload-container form button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.image-upload-container form button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+/* Barra de progreso */
+.progress-bar-container {
+  width: 100%;
+  max-width: 400px;
+  height: 20px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #007bff;
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+/* Estilos para el modal de resultados */
+.ReactModal__Overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ReactModal__Content {
+  width: 400px;
+  max-width: 90%;
+  height: 200px;
+  margin: auto;
+  text-align: center;
+  border: none;
+  border-radius: 8px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Botón dentro del modal */
+.ReactModal__Content button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+}
+
+.ReactModal__Content button:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive: Para pantallas pequeñas */
+@media (max-width: 600px) {
+  .image-upload-container {
       padding: 10px;
-    }
+  }
     
-    .image-upload-container h1 {
+  .image-upload-container h1 {
       font-size: 1.5rem;
-    }
+  }
     
-    .image-upload-container form input[type="file"] {
+  .image-upload-container form input[type="file"] {
       max-width: 90%;
-    }
+  }
     
-    .image-upload-container form button {
+  .image-upload-container form button {
       width: 90%;
       font-size: 0.9rem;
-    }
+  }
     
-    .ReactModal__Content {
+  .ReactModal__Content {
       width: 90%;
       height: auto;
-    }
   }
-
-  
+}
