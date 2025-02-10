@@ -15,8 +15,9 @@ const ImageUpload = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [loggedUser, setLoggedUser] = useState("nombredeusuario");
   const API_URL = process.env.REACT_APP_API_URL;
+  const userId = localStorage.getItem('user_id'); // Se sigue usando para el envío al backend
 
-  // Obtener el username desde localStorage
+  // Obtener el username desde localStorage para mostrarlo en el UI
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     console.log("LocalStorage username:", storedUser);
@@ -56,8 +57,8 @@ const ImageUpload = () => {
       return;
     }
 
-    if (!loggedUser) {
-      alert("Error: No se encontró username. Inicia sesión nuevamente.");
+    if (!userId) {
+      alert("Error: No se encontró user_id. Inicia sesión nuevamente.");
       return;
     }
 
@@ -77,8 +78,8 @@ const ImageUpload = () => {
         const formData = new FormData();
         batches[i].forEach((file) => formData.append('images[]', file));
 
-        // ⚠️ Enviar username y acción en cada solicitud
-        formData.append("username", loggedUser);
+        // Enviar user_id (sin modificarlo) y acción en cada solicitud
+        formData.append("user_id", userId);
         formData.append("action", "upload");
 
         setStatusMessage(`Subiendo batch ${i + 1} de ${totalBatches}...`);
@@ -149,7 +150,11 @@ const ImageUpload = () => {
   return (
     <div className="image-upload-container">
       <h1>Carga de Imágenes</h1>
-      {loggedUser ? <p>Usuario: {loggedUser}</p> : <p style={{ color: 'red' }}>⚠️ Debes iniciar sesión para subir imágenes.</p>}
+      {userId ? (
+        <p>Usuario: {loggedUser}</p>
+      ) : (
+        <p style={{ color: 'red' }}>⚠️ Debes iniciar sesión para subir imágenes.</p>
+      )}
       
       <form onSubmit={handleUpload}>
         <label htmlFor="fileInput">Selecciona las imágenes:</label>
@@ -160,7 +165,7 @@ const ImageUpload = () => {
           multiple
           onChange={(e) => setFiles([...e.target.files])}
         />
-        <button type="submit" disabled={loading || !loggedUser}>
+        <button type="submit" disabled={loading || !userId}>
           {loading ? "Subiendo..." : "Upload"}
         </button>
 
