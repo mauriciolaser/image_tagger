@@ -112,6 +112,7 @@
   border-radius: 8px;
   margin: 15px 0;
   border: 2px solid #e0e0e0;
+  cursor: pointer;
 }
 
 .gallery-delete-button {
@@ -131,13 +132,33 @@
   box-shadow: 0 4px 12px rgba(244,67,54,0.3);
 }
 
+/* Nuevo estilo para el botón de Archivar */
+.gallery-archive-button {
+  background: transparent;
+  color: #2196F3;
+  border: 2px solid #2196F3;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  margin-right: 10px;
+}
+
+.gallery-archive-button:hover {
+  background-color: #2196F3;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+}
+
 /* Modals */
 .gallery-modal-overlay {
   background-color: rgba(0,0,0,0.5);
 }
 
 .gallery-modal-content {
-  position: fixed; /* Asegura que se posicione en relación a la ventana */
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -145,8 +166,8 @@
   max-width: 400px;
   padding: 30px;
   border-radius: 12px;
-  background-color: #fff; /* Opcional: para definir un fondo */
-  z-index: 1001; /* Opcional: para asegurarte de que esté por encima */
+  background-color: #fff;
+  z-index: 1001;
 }
 
 .gallery-modal-title {
@@ -204,4 +225,25 @@
   .gallery-thumbnail-img {
     height: 120px;
   }
+}
+
+/* Estilos para la vista a pantalla completa */
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.fullscreen-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  cursor: pointer;
 }

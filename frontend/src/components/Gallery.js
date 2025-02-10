@@ -25,6 +25,9 @@ const Gallery = () => {
   const API_URL = process.env.REACT_APP_API_URL; 
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL; 
 
+  // Estado para la vista de imagen a pantalla completa
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
   // Al montar el componente, cargar la primera página
   useEffect(() => {
     fetchImages(1);
@@ -191,6 +194,7 @@ const Gallery = () => {
               src={getImageUrl(selectedImage.filename)}
               alt={selectedImage.original_name || selectedImage.filename}
               className="gallery-preview-image"
+              onClick={() => setIsFullScreen(true)}
             />
             <div className="gallery-preview-buttons">
               <button className="gallery-archive-button" onClick={openConfirmArchiveModal}>
@@ -269,6 +273,17 @@ const Gallery = () => {
           Cerrar
         </button>
       </Modal>
+
+      {/* Vista a pantalla completa de la imagen */}
+      {isFullScreen && selectedImage && (
+        <div className="fullscreen-overlay" onClick={() => setIsFullScreen(false)}>
+          <img
+            src={getImageUrl(selectedImage.filename)}
+            alt={selectedImage.original_name || selectedImage.filename}
+            className="fullscreen-image"
+          />
+        </div>
+      )}
     </div>
   );
 };
