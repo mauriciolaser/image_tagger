@@ -57,6 +57,9 @@ if ($conn->connect_error) {
     exit;
 }
 
+// Establecer la codificación de la conexión a UTF-8 MB4 para manejar caracteres especiales
+$conn->set_charset("utf8mb4");
+
 // 1️⃣ Verificar si el usuario existe en la tabla "users"
 $userStmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
 $userStmt->bind_param("i", $user_id);
