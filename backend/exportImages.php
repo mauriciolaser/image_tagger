@@ -5,9 +5,12 @@ require __DIR__ . '/vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-// Encabezados para forzar la descarga del CSV
+// Fecha/hora UTC en formato "dd-mm-yyyy_hh"
+$timestamp = gmdate('d-m-Y_H');
+
+// Encabezados para forzar la descarga del CSV con timestamp en el nombre
 header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename=export_images.csv');
+header('Content-Disposition: attachment; filename=export_images_' . $timestamp . '.csv');
 
 // Configuración de la conexión a la base de datos desde .env
 $db_host = $_ENV['DB_HOST'];
