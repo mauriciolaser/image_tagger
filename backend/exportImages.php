@@ -6,7 +6,7 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 // Fecha/hora UTC en formato "dd-mm-yyyy_hh"
-$timestamp = gmdate('d-m-Y_H');
+$timestamp = gmdate('d-m-Y_H-i-s');
 
 // Encabezados para forzar la descarga del CSV con timestamp en el nombre
 header('Content-Type: text/csv; charset=utf-8');
