@@ -4,71 +4,75 @@ import Modal from 'react-modal';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import './Gallery.css';
 
-// Configura el elemento raíz para react-modal
 Modal.setAppElement('#root');
 
 const Gallery = () => {
-  const [allImages, setAllImages] = useState([]); // Todas las imágenes cargadas hasta el momento
-  const [displayedImages, setDisplayedImages] = useState([]); // Imágenes actualmente mostradas
-  const [sortOrder, setSortOrder] = useState('desc'); // 'desc': más reciente, 'asc': más antiguo
+  const [allImages, setAllImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  // Estados de modales
   const [confirmDeleteModalOpen, setConfirmDeleteModalOpen] = useState(false);
   const [successDeleteModalOpen, setSuccessDeleteModalOpen] = useState(false);
-  
-  // Estados para el modal de archivar
   const [confirmArchiveModalOpen, setConfirmArchiveModalOpen] = useState(false);
   const [successArchiveModalOpen, setSuccessArchiveModalOpen] = useState(false);
+
+  // Nombres de imagen para mostrar en modal
+  const [deleteImageName, setDeleteImageName] = useState('');
   const [archiveImageName, setArchiveImageName] = useState('');
 
-  const [deleteImageName, setDeleteImageName] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const imagesPerPage = 20;
+  // Para la vista full screen
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  // Estado para saber si hay más imágenes
+  const [hasMoreImages, setHasMoreImages] = useState(true);
+
   const API_URL = process.env.REACT_APP_API_URL; 
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL; 
 
-  // Estado para la vista de imagen a pantalla completa
-  const [isFullScreen, setIsFullScreen] = useState(false);
-
-  // Al montar el componente, cargar la primera página
   useEffect(() => {
-    fetchImages(1);
+    loadRandomImages();
   }, []);
 
-  // Actualiza las imágenes mostradas cuando cambian allImages o currentPage
-  useEffect(() => {
-    setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
-  }, [allImages, currentPage]);
-
-  // Función para solicitar una página de imágenes
-  const fetchImages = async (page) => {
+  // Carga 100 imágenes aleatorias sin duplicados
+  const loadRandomImages = async () => {
     try {
+      // Construimos la lista de IDs a excluir
+      const excludeIdsParam = allImages.map(img => img.id).join(',');
       const response = await axios.get(API_URL, {
-        params: { action: "getImages", page }
+        params: { exclude_ids: excludeIdsParam }
       });
-      
-      if (response.data && Array.isArray(response.data.images)) {
-        if (page === 1) {
-          setAllImages(response.data.images);
-        } else {
-          setAllImages(prev => [...prev, ...response.data.images]);
+
+      if (response.data && response.data.success && Array.isArray(response.data.images)) {
+        const newImages = response.data.images;
+        
+        // Si el backend devolvió menos de 100, probablemente no hay más
+        if (newImages.length < 100) {
+          setHasMoreImages(false); 
         }
+
+        // Agregar las nuevas imágenes a las anteriores
+        setAllImages(prev => [...prev, ...newImages]);
       }
     } catch (error) {
       console.error('Error fetching images:', error);
     }
   };
 
-  // Genera la URL de la imagen usando el endpoint del API
-  const getImageUrl = (filename) => {
-    return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
+  // "Cargar más" solo funcionará si hasMoreImages es true
+  const handleLoadMore = () => {
+    if (hasMoreImages) {
+      loadRandomImages();
+    }
   };
 
-  // Maneja la selección de imagen para mostrar el preview
+  // Generar URL de imagen
+  const getImageUrl = (filename) => `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
+
   const handleSelectImage = (image) => {
     setSelectedImage(image);
   };
 
-  // Abrir modal de confirmación para borrar imagen
+  // -- Borrar imagen --
   const openConfirmDeleteModal = () => {
     if (selectedImage) {
       setDeleteImageName(selectedImage.original_name || selectedImage.filename);
@@ -76,7 +80,6 @@ const Gallery = () => {
     }
   };
 
-  // Función para borrar la imagen seleccionada
   const deleteImage = async () => {
     if (!selectedImage) return;
     try {
@@ -87,9 +90,8 @@ const Gallery = () => {
       if (response.data.success) {
         setConfirmDeleteModalOpen(false);
         setSuccessDeleteModalOpen(true);
-        // Remover la imagen eliminada de la lista
-        setAllImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
-        setDisplayedImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
+        // Remover la imagen borrada de la lista
+        setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
         setSelectedImage(null);
       } else {
         alert(response.data.message || 'Error al eliminar la imagen.');
@@ -100,7 +102,7 @@ const Gallery = () => {
     }
   };
 
-  // Abrir modal de confirmación para archivar imagen
+  // -- Archivar imagen --
   const openConfirmArchiveModal = () => {
     if (selectedImage) {
       setArchiveImageName(selectedImage.original_name || selectedImage.filename);
@@ -108,19 +110,18 @@ const Gallery = () => {
     }
   };
 
-  // Función para archivar la imagen seleccionada
   const archiveImage = async () => {
     if (!selectedImage) return;
     try {
-      const response = await axios.post(`${API_URL}?action=archiveImage`, { image_id: selectedImage.id });
-      
+      const response = await axios.post(`${API_URL}?action=archiveImage`, {
+        image_id: selectedImage.id
+      });
+
       if (response.data.success) {
         setConfirmArchiveModalOpen(false);
         setSuccessArchiveModalOpen(true);
-        // Remover la imagen archivada de la lista
-        setAllImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
-        setDisplayedImages(prevImages => prevImages.filter(image => image.id !== selectedImage.id));
-        // Deseleccionamos la imagen
+        // Remover de la lista
+        setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
         setSelectedImage(null);
       } else {
         alert(response.data.message || 'Error al archivar la imagen.');
@@ -131,33 +132,12 @@ const Gallery = () => {
     }
   };
 
-  // Función para cargar más imágenes (la siguiente página)
-  const loadMoreImages = () => {
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    fetchImages(nextPage);
-  };
-
   return (
     <div className="gallery-container">
       <div className="gallery-main-section">
         <h2>Gallery</h2>
-        <div className="gallery-controls">
-          <div className="gallery-sort-controls">
-            <label htmlFor="sortOrder">Ordenar por fecha: </label>
-            <select
-              id="sortOrder"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            >
-              <option value="desc">Más reciente</option>
-              <option value="asc">Más antiguo</option>
-            </select>
-          </div>
-        </div>
-
         <div className="gallery-grid">
-          {displayedImages.map((image, index) => (
+          {allImages.map((image, index) => (
             <div
               key={`${image.id}-${index}`}
               className="gallery-thumbnail"
@@ -175,15 +155,19 @@ const Gallery = () => {
           ))}
         </div>
 
-        {allImages.length >= currentPage * imagesPerPage && (
+        {/* Botón "Cargar más" y mensaje si no hay más */}
+        {hasMoreImages ? (
           <div className="gallery-load-more">
-            <button className="gallery-load-more-button" onClick={loadMoreImages}>
+            <button onClick={handleLoadMore}>
               Cargar más imágenes
             </button>
           </div>
+        ) : (
+          <p>No hay más imágenes para mostrar.</p>
         )}
       </div>
 
+      {/* Sección de vista previa */}
       <div className="gallery-preview-section">
         {selectedImage && (
           <div className="gallery-preview">
@@ -198,10 +182,16 @@ const Gallery = () => {
               onClick={() => setIsFullScreen(true)}
             />
             <div className="gallery-preview-buttons">
-              <button className="gallery-archive-button" onClick={openConfirmArchiveModal}>
+              <button 
+                className="gallery-archive-button" 
+                onClick={openConfirmArchiveModal}
+              >
                 Archivar Imagen
               </button>
-              <button className="gallery-delete-button" onClick={openConfirmDeleteModal}>
+              <button 
+                className="gallery-delete-button" 
+                onClick={openConfirmDeleteModal}
+              >
                 Borrar Imagen
               </button>
             </div>
@@ -209,7 +199,7 @@ const Gallery = () => {
         )}
       </div>
 
-      {/* Modal de Confirmación para Borrar */}
+      {/* -- Modales -- */}
       <Modal
         isOpen={confirmDeleteModalOpen}
         className="gallery-modal-content"
@@ -219,16 +209,22 @@ const Gallery = () => {
           ¿Estás seguro que quieres borrar la imagen "{deleteImageName}"?
         </h2>
         <div className="gallery-modal-buttons">
-          <button className="gallery-modal-confirm" onClick={deleteImage}>
-            Continuar
-          </button>
-          <button className="gallery-modal-cancel" onClick={() => setConfirmDeleteModalOpen(false)}>
-            Cancelar
-          </button>
+          <button onClick={deleteImage}>Continuar</button>
+          <button onClick={() => setConfirmDeleteModalOpen(false)}>Cancelar</button>
         </div>
       </Modal>
 
-      {/* Modal de Confirmación para Archivar */}
+      <Modal
+        isOpen={successDeleteModalOpen}
+        className="gallery-modal-content"
+        overlayClassName="gallery-modal-overlay"
+      >
+        <h2 className="gallery-modal-title">
+          Se borró exitosamente la imagen "{deleteImageName}"
+        </h2>
+        <button onClick={() => setSuccessDeleteModalOpen(false)}>Cerrar</button>
+      </Modal>
+
       <Modal
         isOpen={confirmArchiveModalOpen}
         className="gallery-modal-content"
@@ -238,30 +234,11 @@ const Gallery = () => {
           ¿Archivar esta imagen "{archiveImageName}"?
         </h2>
         <div className="gallery-modal-buttons">
-          <button className="gallery-modal-confirm" onClick={archiveImage}>
-            Continuar
-          </button>
-          <button className="gallery-modal-cancel" onClick={() => setConfirmArchiveModalOpen(false)}>
-            Cancelar
-          </button>
+          <button onClick={archiveImage}>Continuar</button>
+          <button onClick={() => setConfirmArchiveModalOpen(false)}>Cancelar</button>
         </div>
       </Modal>
 
-      {/* Modal de Éxito al Borrar */}
-      <Modal
-        isOpen={successDeleteModalOpen}
-        className="gallery-modal-content"
-        overlayClassName="gallery-modal-overlay"
-      >
-        <h2 className="gallery-modal-title">
-          Se borró exitosamente la imagen "{deleteImageName}"
-        </h2>
-        <button className="gallery-modal-close" onClick={() => setSuccessDeleteModalOpen(false)}>
-          Cerrar
-        </button>
-      </Modal>
-
-      {/* Modal de Éxito al Archivar */}
       <Modal
         isOpen={successArchiveModalOpen}
         className="gallery-modal-content"
@@ -270,51 +247,49 @@ const Gallery = () => {
         <h2 className="gallery-modal-title">
           Se archivó exitosamente la imagen "{archiveImageName}"
         </h2>
-        <button className="gallery-modal-close" onClick={() => setSuccessArchiveModalOpen(false)}>
-          Cerrar
-        </button>
+        <button onClick={() => setSuccessArchiveModalOpen(false)}>Cerrar</button>
       </Modal>
 
-      {/* Vista a pantalla completa con zoom y paneo */}
+      {/* Vista a pantalla completa */}
       {isFullScreen && selectedImage && (
-  <div
-    className="fullscreen-overlay"
-    onClick={(e) => {
-      // Solo cierra si se hizo clic en el overlay (no en un elemento hijo)
-      if (e.target === e.currentTarget) {
-        setIsFullScreen(false);
-      }
-    }}
-  >
-    <TransformWrapper
-      limitToBounds={false} // Permite mover la imagen fuera de los límites iniciales
-      wrapperStyle={{ width: '100%', height: '100%' }} // El área de zoom ocupa todo el overlay
-      defaultScale={1}
-      defaultPositionX={0}
-      defaultPositionY={0}
-    >
-      {({ zoomIn, zoomOut, resetTransform }) => (
-        <>
-          {/* Controles de zoom y paneo */}
-          <div className="fullscreen-controls" onClick={(e) => e.stopPropagation()}>
-            <button onClick={(e) => { e.stopPropagation(); zoomIn(); }}>+</button>
-            <button onClick={(e) => { e.stopPropagation(); zoomOut(); }}>-</button>
-            <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>Reset</button>
-          </div>
-          <TransformComponent>
-            <img
-              src={getImageUrl(selectedImage.filename)}
-              alt={selectedImage.original_name || selectedImage.filename}
-              className="fullscreen-image"
-              onClick={(e) => e.stopPropagation()} // Evita que el clic en la imagen se propague al overlay
-            />
-          </TransformComponent>
-        </>
+        <div
+          className="fullscreen-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsFullScreen(false);
+            }
+          }}
+        >
+          <TransformWrapper
+            limitToBounds={false}
+            wrapperStyle={{ width: '100%', height: '100%' }}
+            defaultScale={1}
+            defaultPositionX={0}
+            defaultPositionY={0}
+          >
+            {({ zoomIn, zoomOut, resetTransform }) => (
+              <>
+                <div
+                  className="fullscreen-controls"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button onClick={(e) => { e.stopPropagation(); zoomIn(); }}>+</button>
+                  <button onClick={(e) => { e.stopPropagation(); zoomOut(); }}>-</button>
+                  <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>Reset</button>
+                </div>
+                <TransformComponent>
+                  <img
+                    src={getImageUrl(selectedImage.filename)}
+                    alt={selectedImage.original_name || selectedImage.filename}
+                    className="fullscreen-image"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TransformComponent>
+              </>
+            )}
+          </TransformWrapper>
+        </div>
       )}
-    </TransformWrapper>
-  </div>
-)}
-
     </div>
   );
 };
