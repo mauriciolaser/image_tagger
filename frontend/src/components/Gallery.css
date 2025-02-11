@@ -55,7 +55,7 @@
 
 .gallery-thumbnail:hover {
   border-color: #2196F3;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .gallery-thumbnail-img {
@@ -96,14 +96,14 @@
 .gallery-load-more-button:hover {
   background-color: #1976D2;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
 .gallery-preview {
   background: #f8f9fa;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .gallery-preview-image {
@@ -129,7 +129,7 @@
 .gallery-delete-button:hover {
   background-color: #d32f2f;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244,67,54,0.3);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
 /* Nuevo estilo para el botón de Archivar */
@@ -145,36 +145,82 @@
   margin-right: 10px;
 }
 
+.gallery-archive-button:disabled {
+  background: #ddd;
+  color: #777;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+
 .gallery-archive-button:hover {
   background-color: #2196F3;
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
 /* Modals */
 .gallery-modal-overlay {
-  background-color: rgba(0,0,0,0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
 }
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
 
 .gallery-modal-content {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.8);
   width: 90%;
   max-width: 400px;
   padding: 30px;
   border-radius: 12px;
   background-color: #fff;
   z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
+
+.ReactModal__Overlay--after-open .gallery-modal-content {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.ReactModal__Overlay--before-close .gallery-modal-content {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
 
 .gallery-modal-title {
   font-size: 1.2em;
   margin-bottom: 25px;
   color: #333;
+  word-break: break-word;
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
+
 
 .gallery-modal-buttons {
   display: flex;
@@ -189,39 +235,56 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 1em;
   transition: all 0.2s ease;
 }
 
+/* Botón de Confirmar (Verde) */
 .gallery-modal-confirm {
   background-color: #4CAF50;
   color: white;
 }
 
+.gallery-modal-confirm:hover {
+  background-color: #388E3C;
+}
+
+/* Botón de Cancelar (Rojo) */
 .gallery-modal-cancel {
-  background-color: #9E9E9E;
+  background-color: #f44336;
   color: white;
 }
 
+.gallery-modal-cancel:hover {
+  background-color: #d32f2f;
+}
+
+/* Botón de Cerrar (Azul) */
 .gallery-modal-close {
   background-color: #2196F3;
   color: white;
 }
+
+.gallery-modal-close:hover {
+  background-color: #1976D2;
+}
+
 
 @media (max-width: 768px) {
   .gallery-container {
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .gallery-preview-section {
     position: static;
     width: 100%;
   }
-  
+
   .gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
-  
+
   .gallery-thumbnail-img {
     height: 120px;
   }

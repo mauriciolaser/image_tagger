@@ -27,7 +27,7 @@ $sql = "SELECT id, filename, original_name, uploaded_at
         FROM images 
         WHERE archived = 0 
         ORDER BY RAND() 
-        LIMIT 100";
+        LIMIT 300";
 
 $result = $conn->query($sql);
 $images = [];
