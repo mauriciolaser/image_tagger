@@ -22,7 +22,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Obtener 100 imágenes aleatorias
+// Obtener 300 imágenes aleatorias
 $sql = "SELECT id, filename, original_name, uploaded_at 
         FROM images 
         WHERE archived = 0 
