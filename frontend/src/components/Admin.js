@@ -1,8 +1,18 @@
+// src/components/Admin.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+// Ya no necesitamos importar axios en este componente
 import Modal from 'react-modal';
 import './Admin.css';
+
+// Importamos las funciones de nuestro servicio
+import {
+  getImportStatus,
+  deleteAllImages,
+  startImport,
+  stopImport,
+  clearDatabase
+} from '../services/adminService';
 
 // Configurar el elemento raíz para react-modal.
 Modal.setAppElement('#root');
@@ -21,7 +31,6 @@ const Admin = () => {
   const [modalMessage, setModalMessage] = useState('');
   const [jobId, setJobId] = useState(null);
   const [importStatus, setImportStatus] = useState('');
-  const API_URL = process.env.REACT_APP_API_URL;
 
   // Al iniciar, se leen los datos del usuario desde localStorage.
   useEffect(() => {
@@ -37,8 +46,7 @@ const Admin = () => {
     if (jobId) {
       interval = setInterval(async () => {
         try {
-          // Consultar el estado del job usando job_id.
-          const response = await axios.get(`${API_URL}?action=importStatus&job_id=${jobId}`);
+          const response = await getImportStatus(jobId);
           if (response.data.success) {
             setImportStatus(response.data.status);
             // Cuando el job se completa o se detiene, se borra el job pendiente.
@@ -54,13 +62,13 @@ const Admin = () => {
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [jobId, API_URL]);
+  }, [jobId]);
 
   const handleDeleteAllImages = async () => {
     if (loggedUser !== 'admin') return;
     setDeleteLoading(true);
     try {
-      const response = await axios.delete(`${API_URL}?action=deleteAllImages`);
+      const response = await deleteAllImages();
       setModalMessage(
         response.data.success
           ? "Se borraron todas las imágenes."
@@ -81,7 +89,8 @@ const Admin = () => {
       setStatusModalOpen(true);
       return;
     }
-    window.open(`${API_URL}?action=exportImages&user_id=${userId}`, '_blank');
+    // Abrimos una nueva ventana con la ruta de exportación
+    window.open(`${process.env.REACT_APP_API_URL}?action=exportImages&user_id=${userId}`, '_blank');
   };
 
   const handleImportImages = async () => {
@@ -94,8 +103,7 @@ const Admin = () => {
 
     try {
       setImportLoading(true);
-      // Se inicia la importación solicitando al backend que inicie el job.
-      const response = await axios.get(`${API_URL}?action=startImport&user_id=${userId}`);
+      const response = await startImport(userId);
       if (response.data.success) {
         // Se almacena el job_id y se marca el estado como "running".
         setJobId(response.data.job_id);
@@ -121,7 +129,7 @@ const Admin = () => {
   const handleCancelImport = async () => {
     if (!jobId) return;
     try {
-      const response = await axios.get(`${API_URL}?action=stopImport&job_id=${jobId}`);
+      const response = await stopImport(jobId);
       if (response.data.success) {
         setImportStatus("stopped");
         setModalMessage("Importación detenida.");
@@ -139,7 +147,7 @@ const Admin = () => {
     if (loggedUser !== 'admin') return;
     setClearDbLoading(true);
     try {
-      const response = await axios.delete(`${API_URL}?action=clearDatabase`);
+      const response = await clearDatabase();
       setModalMessage(
         response.data.success
           ? response.data.message || "Base de datos limpia exitosamente."
@@ -168,13 +176,15 @@ const Admin = () => {
         <p className="user-info">Usuario: {loggedUser}</p>
       </div>
       <div className="admin-buttons">
-        <button 
-          onClick={() => setDeleteModalOpen(true)} 
-          disabled={deleteLoading || loggedUser !== 'admin'} 
-          className="delete-button"
-        >
-          {deleteLoading ? "Borrando..." : "Nuke database ☢️"}
-        </button>
+        {loggedUser === 'admin' && (
+          <button 
+            onClick={() => setDeleteModalOpen(true)} 
+            disabled={deleteLoading} 
+            className="delete-button"
+          >
+            {deleteLoading ? "Borrando..." : "Nuke database ☢️"}
+          </button>
+        )}
         <button 
           onClick={handleExport} 
           disabled={deleteLoading || importLoading} 
@@ -182,21 +192,24 @@ const Admin = () => {
         >
           Exportar
         </button>
-        {/* El botón de importar queda inhabilitado si ya hay un job pendiente o si el usuario no es 'admin' */}
-        <button 
-          onClick={() => setImportModalOpen(true)} 
-          disabled={importLoading || jobId || loggedUser !== 'admin'} 
-          className="import-button"
-        >
-          {importLoading ? "Importando..." : "Importar imágenes"}
-        </button>
-        <button 
-          onClick={() => setClearDbModalOpen(true)} 
-          disabled={clearDbLoading || loggedUser !== 'admin'} 
-          className="clear-db-button"
-        >
-          {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
-        </button>
+        {loggedUser === 'admin' && (
+          <button 
+            onClick={() => setImportModalOpen(true)} 
+            disabled={importLoading || jobId} 
+            className="import-button"
+          >
+            {importLoading ? "Importando..." : "Importar imágenes"}
+          </button>
+        )}
+        {loggedUser === 'admin' && (
+          <button 
+            onClick={() => setClearDbModalOpen(true)} 
+            disabled={clearDbLoading} 
+            className="clear-db-button"
+          >
+            {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
+          </button>
+        )}
         <button onClick={handleLogout} className="logout-button">
           Cerrar sesión
         </button>
@@ -239,12 +252,10 @@ const Admin = () => {
       <Modal isOpen={statusModalOpen} onRequestClose={() => setStatusModalOpen(false)} className="admin-modal">
         <h2>{modalMessage}</h2>
         {modalMessage === "La importación ha comenzado. Puedes cerrar esta ventana" ? (
-          // Si es el mensaje de inicio de importación, se muestra un único botón que cierra el modal.
           <button onClick={() => setStatusModalOpen(false)} className="admin-modal-confirm-button">
             Continuar
           </button>
         ) : jobId && importStatus === "running" ? (
-          // Mientras se está importando, se muestran opciones para cancelar o cerrar el modal.
           <>
             <p>Estado: {importStatus}</p>
             <button onClick={handleCancelImport} className="admin-modal-cancel-button">
@@ -255,7 +266,6 @@ const Admin = () => {
             </button>
           </>
         ) : (
-          // En otros casos (p.ej., tras borrar o exportar), se muestra un botón que cierra el modal y, en ciertos mensajes, redirige a la galería.
           <button
             onClick={() => {
               setStatusModalOpen(false);
@@ -275,7 +285,6 @@ const Admin = () => {
         )}
       </Modal>
 
-      {/* Banner de estado de importación en la esquina inferior derecha */}
       {jobId && importStatus === "running" && (
         <div className="import-status-banner">
           <p>Importación en curso...</p>
