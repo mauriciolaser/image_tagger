@@ -48,6 +48,7 @@ $routes = [
     'tagImage'       => 'tagImage.php',
     'getRandomImages'=> 'getRandomImages.php',
     'archiveImage'   => 'archiveImage.php',
+    'getTaggedImages'=> 'getTaggedImages.php',
     'clearDatabase'  => 'clearDatabase.php'
 ];
 

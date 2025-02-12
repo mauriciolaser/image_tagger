@@ -22,9 +22,10 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Leer los datos JSON enviados (en este caso, image_id)
+// Leer los datos JSON enviados
 $data = json_decode(file_get_contents("php://input"), true);
 $image_id = isset($data['image_id']) ? (int)$data['image_id'] : null;
+$new_archived = isset($data['archived']) ? (int)$data['archived'] : 1;
 
 if (!$image_id) {
     http_response_code(400);
@@ -32,17 +33,20 @@ if (!$image_id) {
     exit;
 }
 
-// Actualizar el campo archived a TRUE (1) para la imagen indicada
-$stmt = $conn->prepare("UPDATE images SET archived = 1 WHERE id = ?");
-$stmt->bind_param("i", $image_id);
+// Actualizar el campo archived = 0 o 1
+$stmt = $conn->prepare("UPDATE images SET archived = ? WHERE id = ?");
+$stmt->bind_param("ii", $new_archived, $image_id);
 
 if ($stmt->execute()) {
-    echo json_encode(["success" => true, "message" => "Imagen archivada exitosamente"]);
+    if ($new_archived === 1) {
+        echo json_encode(["success" => true, "message" => "Imagen archivada exitosamente"]);
+    } else {
+        echo json_encode(["success" => true, "message" => "Imagen restaurada exitosamente"]);
+    }
 } else {
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => "Error al archivar la imagen"]);
+    echo json_encode(["success" => false, "message" => "Error al cambiar el estado de la imagen"]);
 }
 
 $stmt->close();
 $conn->close();
-?>

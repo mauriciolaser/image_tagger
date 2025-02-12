@@ -21,18 +21,31 @@
   margin-bottom: 20px;
 }
 
-.gallery-sort-controls {
+/* Botones de filtrado */
+.gallery-filter-buttons {
   display: flex;
-  align-items: center;
   gap: 10px;
 }
 
-.gallery-sort-controls label {
-  font-weight: 600;
+.gallery-filter-button {
+  background-color: #ccc;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.gallery-sort-controls select {
-  padding: 5px 10px;
+/* Botón “activo” */
+.gallery-filter-button.active {
+  background-color: #2196F3;
+  color: #fff;
+}
+
+/* Efecto hover */
+.gallery-filter-button:hover {
+  background-color: #bbb;
 }
 
 .gallery-grid {

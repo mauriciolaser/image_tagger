@@ -23,37 +23,118 @@ if ($conn->connect_error) {
 
 $publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
 
+// Recibimos 'archived' y 'with_tags' de $_GET
+$archivedParam = isset($_GET['archived']) ? intval($_GET['archived']) : 0;
+$withTagsParam = isset($_GET['with_tags']) ? $_GET['with_tags'] : null; 
+    // null si no viene, '0' o '1' si viene
+
+// Posible lectura de 'exclude_ids'
 $excludeIdsParam = isset($_GET['exclude_ids']) ? $_GET['exclude_ids'] : '';
 $excludeIdsArray = [];
-
 if (!empty($excludeIdsParam)) {
     $excludeIdsArray = array_map('intval', explode(',', $excludeIdsParam));
 }
 
-if (!empty($excludeIdsArray)) {
-    $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-    $sql = "SELECT id, filename, original_name, uploaded_at
-            FROM images
-            WHERE archived = 0
-              AND id NOT IN ($placeholders)
-            ORDER BY RAND()
-            LIMIT 100";
+// Armamos la query en función de archived y with_tags
+// (Si with_tags no está, usamos la lógica "vieja"; si está =1 => con tags; si está=0 => sin tags.)
+
+if ($withTagsParam === '1') {
+    // --> SOLO imágenes CON tags
+    // Usamos un INNER JOIN con image_tags para que vengan sólo las que tienen al menos 1 tag
+    // Podrías usar GROUP BY i.id si una imagen tiene múltiples tags.
     
-    $stmt = $conn->prepare($sql);
-    $types = str_repeat('i', count($excludeIdsArray));
-    $stmt->bind_param($types, ...$excludeIdsArray);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $stmt->close();
+    if (!empty($excludeIdsArray)) {
+        // Existen exclude_ids
+        $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
+        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+                FROM images i
+                INNER JOIN image_tags it ON i.id = it.image_id
+                WHERE i.archived = ?
+                  AND i.id NOT IN ($placeholders)
+                GROUP BY i.id
+                ORDER BY RAND()
+                LIMIT 300";
+        $stmt = $conn->prepare($sql);
+        
+        $types = 'i' . str_repeat('i', count($excludeIdsArray));
+        $bindValues = array_merge([$archivedParam], $excludeIdsArray);
+        $stmt->bind_param($types, ...$bindValues);
+    } else {
+        // Sin exclude_ids
+        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+                FROM images i
+                INNER JOIN image_tags it ON i.id = it.image_id
+                WHERE i.archived = ?
+                GROUP BY i.id
+                ORDER BY RAND()
+                LIMIT 300";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $archivedParam);
+    }
+
+} elseif ($withTagsParam === '0') {
+    // --> SOLO imágenes SIN tags
+    // Usamos un LEFT JOIN con image_tags y pedimos las que NO tienen relación.
+    
+    if (!empty($excludeIdsArray)) {
+        $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
+        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+                FROM images i
+                LEFT JOIN image_tags it ON i.id = it.image_id
+                WHERE i.archived = ?
+                  AND i.id NOT IN ($placeholders)
+                  AND it.image_id IS NULL
+                ORDER BY RAND()
+                LIMIT 300";
+        $stmt = $conn->prepare($sql);
+        
+        $types = 'i' . str_repeat('i', count($excludeIdsArray));
+        $bindValues = array_merge([$archivedParam], $excludeIdsArray);
+        $stmt->bind_param($types, ...$bindValues);
+    } else {
+        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+                FROM images i
+                LEFT JOIN image_tags it ON i.id = it.image_id
+                WHERE i.archived = ?
+                  AND it.image_id IS NULL
+                ORDER BY RAND()
+                LIMIT 300";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $archivedParam);
+    }
+
 } else {
-    $sql = "SELECT id, filename, original_name, uploaded_at
-            FROM images
-            WHERE archived = 0
-            ORDER BY RAND()
-            LIMIT 100";
-    $result = $conn->query($sql);
+    // --> Lógica vieja: TODAS las imágenes, con archived=? y limit=300
+    if (!empty($excludeIdsArray)) {
+        $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
+        $sql = "SELECT id, filename, original_name, uploaded_at
+                FROM images
+                WHERE archived = ?
+                  AND id NOT IN ($placeholders)
+                ORDER BY RAND()
+                LIMIT 300";
+        $stmt = $conn->prepare($sql);
+        
+        $types = 'i' . str_repeat('i', count($excludeIdsArray));
+        $bindValues = array_merge([$archivedParam], $excludeIdsArray);
+        $stmt->bind_param($types, ...$bindValues);
+    } else {
+        $sql = "SELECT id, filename, original_name, uploaded_at
+                FROM images
+                WHERE archived = ?
+                ORDER BY RAND()
+                LIMIT 300";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $archivedParam);
+    }
 }
 
+// Ejecutamos la consulta
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
+
+// Construimos el array de imágenes
 $images = [];
 while ($row = $result->fetch_assoc()) {
     $row['public_url'] = $publicUrlBase . "getImage.php?file=" . urlencode($row['filename']);
@@ -62,9 +143,9 @@ while ($row = $result->fetch_assoc()) {
 
 $conn->close();
 
-// Podemos enviar en la respuesta cuántas imágenes obtuvimos.
+// Respuesta JSON
 echo json_encode([
-    "success" => true, 
-    "count" => count($images), 
+    "success" => true,
+    "count" => count($images),
     "images" => $images
 ]);
