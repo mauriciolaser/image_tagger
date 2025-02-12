@@ -57,6 +57,7 @@ const Admin = () => {
   }, [jobId, API_URL]);
 
   const handleDeleteAllImages = async () => {
+    if (loggedUser !== 'admin') return;
     setDeleteLoading(true);
     try {
       const response = await axios.delete(`${API_URL}?action=deleteAllImages`);
@@ -84,6 +85,7 @@ const Admin = () => {
   };
 
   const handleImportImages = async () => {
+    if (loggedUser !== 'admin') return;
     if (!userId) {
       setModalMessage("No se encontró user_id en localStorage.");
       setStatusModalOpen(true);
@@ -134,6 +136,7 @@ const Admin = () => {
   };
 
   const handleClearDatabase = async () => {
+    if (loggedUser !== 'admin') return;
     setClearDbLoading(true);
     try {
       const response = await axios.delete(`${API_URL}?action=clearDatabase`);
@@ -165,17 +168,33 @@ const Admin = () => {
         <p className="user-info">Usuario: {loggedUser}</p>
       </div>
       <div className="admin-buttons">
-        <button onClick={() => setDeleteModalOpen(true)} disabled={deleteLoading} className="delete-button">
+        <button 
+          onClick={() => setDeleteModalOpen(true)} 
+          disabled={deleteLoading || loggedUser !== 'admin'} 
+          className="delete-button"
+        >
           {deleteLoading ? "Borrando..." : "Nuke database ☢️"}
         </button>
-        <button onClick={handleExport} disabled={deleteLoading || importLoading} className="export-button">
+        <button 
+          onClick={handleExport} 
+          disabled={deleteLoading || importLoading} 
+          className="export-button"
+        >
           Exportar
         </button>
-        {/* El botón de importar queda inhabilitado si ya hay un job pendiente */}
-        <button onClick={() => setImportModalOpen(true)} disabled={importLoading || jobId} className="import-button">
+        {/* El botón de importar queda inhabilitado si ya hay un job pendiente o si el usuario no es 'admin' */}
+        <button 
+          onClick={() => setImportModalOpen(true)} 
+          disabled={importLoading || jobId || loggedUser !== 'admin'} 
+          className="import-button"
+        >
           {importLoading ? "Importando..." : "Importar imágenes"}
         </button>
-        <button onClick={() => setClearDbModalOpen(true)} disabled={clearDbLoading} className="clear-db-button">
+        <button 
+          onClick={() => setClearDbModalOpen(true)} 
+          disabled={clearDbLoading || loggedUser !== 'admin'} 
+          className="clear-db-button"
+        >
           {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
         </button>
         <button onClick={handleLogout} className="logout-button">
