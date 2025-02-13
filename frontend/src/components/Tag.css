@@ -351,3 +351,85 @@
 .fullscreen-controls button:hover {
   background-color: rgba(255, 255, 255, 1);
 }
+
+/* ===== Search Bars for "Con Tags" ===== */
+.tag-search-container {
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.search-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.search-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.search-input-row input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #bdc3c7;
+  border-radius: 6px;
+  font-size: 0.95em;
+  transition: all 0.3s ease;
+}
+
+.search-input-row input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+}
+
+.search-input-row button {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: all 0.3s ease;
+}
+
+.search-input-row button:hover {
+  background-color: #219a52;
+  transform: translateY(-2px);
+}
+
+.search-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.search-tag-item {
+  display: inline-flex;
+  align-items: center;
+  background: #e8f4fd;
+  color: #2980b9;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+}
+
+.search-tag-item button {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  margin-left: 5px;
+  font-size: 1em;
+}
+
+.search-tag-item button:hover {
+  color: #c0392b;
+}
