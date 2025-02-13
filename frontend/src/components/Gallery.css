@@ -28,24 +28,37 @@
 }
 
 .gallery-filter-button {
-  background-color: #ccc;
-  color: #333;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 25px;
+  background: #fff;
+  border: 2px solid #bdc3c7;     /* Borde gris */
+  padding: 8px 16px;
+  border-radius: 20px;          /* Similar forma redondeada */
   cursor: pointer;
+  font-size: 1em;
   transition: all 0.3s ease;
+  color: #34495e;               /* Texto gris oscuro */
 }
 
-/* Botón “activo” */
+/* Botón "activo" (azul) */
 .gallery-filter-button.active {
-  background-color: #2196F3;
+  background: #3498db;
+  border-color: #3498db;
   color: #fff;
 }
 
-/* Efecto hover */
-.gallery-filter-button:hover {
+/* Efecto hover (cuando NO está deshabilitado) */
+.gallery-filter-button:hover:enabled {
   background-color: #bbb;
+}
+
+/* Estado "deshabilitado" */
+.gallery-filter-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hover (gris claro) */
+.gallery-filter-button:hover {
+  background: #f0f0f0;
 }
 
 .gallery-grid {

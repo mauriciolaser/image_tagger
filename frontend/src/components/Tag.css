@@ -66,7 +66,7 @@
   box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
 }
 
-/* ===== Filtro de Imágenes ===== */
+/* ===== Filtro de Imágenes (botones) ===== */
 .tag-filter-bar {
   display: flex;
   gap: 10px;
@@ -91,6 +91,12 @@
   background: #3498db;
   border-color: #3498db;
   color: #fff;
+}
+
+/* ===== Desactivar/Deshabilitar ===== */
+.tag-filter-bar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ===== Images Grid ===== */
@@ -432,4 +438,50 @@
 
 .search-tag-item button:hover {
   color: #c0392b;
+}
+
+/* ===== Search Bar triggered by "Buscar" button ===== */
+.search-by-filename {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.search-by-filename input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #bdc3c7;
+  border-radius: 6px;
+  font-size: 0.95em;
+  transition: all 0.3s ease;
+}
+
+.search-by-filename input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+}
+
+.search-by-filename button {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: all 0.3s ease;
+}
+
+.search-by-filename button:hover {
+  background-color: #219a52;
+  transform: translateY(-2px);
+}
+
+.searched-image-result img {
+  max-width: 200px;
+  border: 2px solid #bdc3c7;
+  border-radius: 6px;
+  display: block;
+  margin-top: 10px;
 }

@@ -2,63 +2,71 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { FaSearch } from 'react-icons/fa'; // Para el ícono de lupa
 import './Gallery.css';
 
 // Configura el elemento raíz para react-modal
 Modal.setAppElement('#root');
 
 const Gallery = () => {
+  // Pestaña activa: "search" | "filtrados" | "archivados"
+  const [activeTab, setActiveTab] = useState("filtrados");
+
+  // Lista de imágenes y paginación
   const [allImages, setAllImages] = useState([]);         
   const [displayedImages, setDisplayedImages] = useState([]);
-  
-  const [viewArchived, setViewArchived] = useState(false); 
+  const [currentPage, setCurrentPage] = useState(1);
+  const imagesPerPage = 20;
+
+  // Modo fullscreen
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  // Imagen seleccionada para previsualizar
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // Modales de confirmación y éxito para eliminar
+  // Estado de archivado
+  const [viewArchived, setViewArchived] = useState(false);
+
+  // Modales de confirmación (borrar) y éxito
   const [confirmDeleteModalOpen, setConfirmDeleteModalOpen] = useState(false);
   const [successDeleteModalOpen, setSuccessDeleteModalOpen] = useState(false);
 
-  // Modales de confirmación y éxito para archivar/restaurar
+  // Modales de confirmación (archivar/restaurar) y éxito
   const [confirmArchiveModalOpen, setConfirmArchiveModalOpen] = useState(false);
   const [successArchiveModalOpen, setSuccessArchiveModalOpen] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
 
-  // Para mostrar en el modal el nombre de la imagen que se está archivando/borrando
+  // Nombre de la imagen en los modales
   const [archiveImageName, setArchiveImageName] = useState('');
   const [deleteImageName, setDeleteImageName] = useState('');
-
-  // Paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const imagesPerPage = 20;
-
-  // Rutas
-  const API_URL = process.env.REACT_APP_API_URL;
-  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
-
-  // Vista fullscreen
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Usuario logueado
   const [loggedUser, setLoggedUser] = useState('');
 
-  // Al montar, obtener el usuario y cargar la página 1 con archived=0
+  // Estados para la búsqueda individual
+  const [searchFileName, setSearchFileName] = useState('');
+  const [searchedImageObj, setSearchedImageObj] = useState(null);
+
+  // Rutas de la API
+  const API_URL = process.env.REACT_APP_API_URL;     
+  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL; 
+
+  // Al montar: obtener el usuario y cargar por defecto "Filtrados" (archived=0)
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
       setLoggedUser(storedUser);
     }
-    fetchImages(1, 0); // Por defecto, "Filtrados" (archived=0)
+    fetchImages(1, 0); // Filtrados por defecto
   }, []);
 
-  // Actualiza las imágenes que se muestran cuando cambian allImages o currentPage
+  // Cada vez que cambien allImages o currentPage, actualiza displayedImages
   useEffect(() => {
     setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
   }, [allImages, currentPage]);
 
   /**
-   * Llama al backend para obtener imágenes con archived=0 o archived=1.
-   * @param {number} page - Página a solicitar
-   * @param {number} archivedValor - 0 para no archivadas, 1 para archivadas
+   * Llama al backend (getImages.php) con archived=0 ó 1, y página
    */
   const fetchImages = async (page, archivedValor) => {
     try {
@@ -71,10 +79,8 @@ const Gallery = () => {
       });
       if (response.data && Array.isArray(response.data.images)) {
         if (page === 1) {
-          // Reinicia la lista
           setAllImages(response.data.images);
         } else {
-          // Agrega más resultados
           setAllImages(prev => [...prev, ...response.data.images]);
         }
       }
@@ -88,12 +94,12 @@ const Gallery = () => {
     return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
   };
 
-  // Selecciona una imagen para previsualizar
+  // Seleccionar imagen para panel de previsualización
   const handleSelectImage = (image) => {
     setSelectedImage(image);
   };
 
-  // ---------- Borrar Imagen ----------
+  // -------------- Borrar Imagen --------------
   const openConfirmDeleteModal = () => {
     if (loggedUser !== 'admin' || !selectedImage) return;
     setDeleteImageName(selectedImage.original_name || selectedImage.filename);
@@ -110,9 +116,9 @@ const Gallery = () => {
       if (response.data.success) {
         setConfirmDeleteModalOpen(false);
         setSuccessDeleteModalOpen(true);
-        // Remover la imagen de la lista
-        setAllImages(prev => prev.filter(image => image.id !== selectedImage.id));
-        setDisplayedImages(prev => prev.filter(image => image.id !== selectedImage.id));
+        // Sacar la imagen de la lista actual
+        setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
+        setDisplayedImages(prev => prev.filter(img => img.id !== selectedImage.id));
         setSelectedImage(null);
       } else {
         alert(response.data.message || 'Error al eliminar la imagen.');
@@ -123,23 +129,18 @@ const Gallery = () => {
     }
   };
 
-  // ---------- Archivar / Restaurar Imagen ----------
-  // Abre el modal de confirmación para archivar o restaurar
+  // -------------- Archivar / Restaurar --------------
   const openConfirmArchiveModal = () => {
     if (!selectedImage) return;
     setArchiveImageName(selectedImage.original_name || selectedImage.filename);
     setConfirmArchiveModalOpen(true);
   };
 
-  // Acción de archivar o restaurar en base al estado actual de la imagen
   const handleArchiveToggle = async () => {
     if (!selectedImage) return;
     setIsArchiving(true);
 
-    // Si la imagen está archivada (=1), la "restauramos" (ponemos archived=0).
-    // De lo contrario, la "archivamos" (archived=1).
     const newArchivedValue = selectedImage.archived === 1 ? 0 : 1;
-
     try {
       const response = await axios.post(`${API_URL}?action=archiveImage`, {
         image_id: selectedImage.id,
@@ -149,79 +150,131 @@ const Gallery = () => {
       if (response.data.success) {
         setConfirmArchiveModalOpen(false);
         setSuccessArchiveModalOpen(true);
-
-        // Actualizamos la lista de imágenes:
-        // Si la vista actual es "Filtrados" (archived=0) y acabamos de archivar, la quitamos.
-        // Si la vista actual es "Archivados" (archived=1) y acabamos de restaurar, la quitamos.
+        // Quitar la imagen de la lista
         setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
-
-        setSelectedImage(null); 
+        setSelectedImage(null);
       } else {
-        alert(response.data.message || 'Error al modificar el estado de la imagen.');
+        alert(response.data.message || 'Error al modificar estado de la imagen.');
       }
     } catch (error) {
       console.error('Error toggling archive state:', error);
-      alert('Error al modificar el estado de la imagen.');
+      alert('Error al modificar estado de la imagen.');
     } finally {
       setIsArchiving(false);
     }
   };
 
-  // Carga más imágenes en la vista actual
-  const loadMoreImages = () => {
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    fetchImages(nextPage, viewArchived ? 1 : 0);
-  };
-
-  // Vista filtrados (archived=0)
+  // -------------- Botones para Filtrados/Archivados/Cargar más --------------
   const showNonArchived = () => {
+    setActiveTab("filtrados"); // <-- nuevo
     setViewArchived(false);
     setCurrentPage(1);
     setAllImages([]);
     fetchImages(1, 0);
   };
 
-  // Vista archivados (archived=1)
   const showArchived = () => {
+    setActiveTab("archivados"); // <-- nuevo
     setViewArchived(true);
     setCurrentPage(1);
     setAllImages([]);
     fetchImages(1, 1);
   };
 
-  // Texto dinámico para el botón (Archivar vs Restaurar)
-  const archiveButtonText = selectedImage && selectedImage.archived === 1
-    ? "Restaurar Imagen"
-    : "Archivar Imagen";
+  const loadMoreImages = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchImages(nextPage, viewArchived ? 1 : 0);
+  };
 
-  // Texto dinámico para el modal de confirmación (¿Archivar...? vs ¿Restaurar...?)
-  const archiveModalText = selectedImage && selectedImage.archived === 1
-    ? `¿Restaurar esta imagen "${archiveImageName}"?`
-    : `¿Archivar esta imagen "${archiveImageName}"?`;
+  // -------------- Modo Búsqueda --------------
+  const handleClickSearch = () => {
+    // Cuando clicamos "Búsqueda", activamos esa pestaña
+    setActiveTab("search");
+    // Si ya teníamos un 'searchedImageObj' o algo, no lo limpiamos a menos que quieras
+    // (Depende de la preferencia. Si deseas limpiar cada vez, haz setSearchedImageObj(null))
+  };
 
-  // Texto dinámico para el modal de éxito (Se archivó... vs Se restauró...)
-  const successArchiveText = selectedImage && selectedImage.archived === 1
-    ? `Se restauró exitosamente la imagen "${archiveImageName}"`
-    : `Se archivó exitosamente la imagen "${archiveImageName}"`;
+  // Al cambiar la pestaña a Filtrados/Archivados, no se anula la búsqueda, 
+  // pero dejaremos de mostrar la barra de búsqueda (ver lógica en return).
+  
+  // Manejo de input + Enter
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    handleSearch();
+  };
+
+  const handleSearch = async () => {
+    if (!searchFileName.trim()) {
+      alert("Debes ingresar un nombre de archivo (filename)");
+      return;
+    }
+    try {
+      const response = await axios.get(API_URL, {
+        params: {
+          action: "getImages",
+          filename: searchFileName.trim()
+        }
+      });
+      if (response.data.success && response.data.images.length > 0) {
+        setSearchedImageObj(response.data.images[0]);
+      } else {
+        // No se encontró
+        setSearchedImageObj(null);
+      }
+    } catch (error) {
+      console.error("Error al buscar la imagen:", error);
+      setSearchedImageObj(null);
+    }
+  };
+
+  // Texto dinámico del botón Archivar/Restaurar
+  const archiveButtonText =
+    selectedImage && selectedImage.archived === 1
+      ? "Restaurar Imagen"
+      : "Archivar Imagen";
+
+  // Texto para el modal de confirmación de archivado
+  const archiveModalText =
+    selectedImage && selectedImage.archived === 1
+      ? `¿Restaurar la imagen "${archiveImageName}"?`
+      : `¿Archivar la imagen "${archiveImageName}"?`;
+
+  // Texto para el modal de éxito al archivar/restaurar
+  const successArchiveText =
+    selectedImage && selectedImage.archived === 1
+      ? `Se restauró exitosamente la imagen "${archiveImageName}"`
+      : `Se archivó exitosamente la imagen "${archiveImageName}"`;
+
+  // Lógica para mostrar/ocultar la barra de búsqueda:
+  const isSearchTabActive = (activeTab === "search");
 
   return (
     <div className="gallery-container">
-      
       <div className="gallery-main-section">
-        <h2>Gallery</h2>
+        <h2>Galería de imágenes</h2>
 
-        {/* Controles de filtrado */}
         <div className="gallery-controls">
           <div className="gallery-filter-buttons">
+            {/* Botón "Búsqueda" */}
             <button
-              className={`gallery-filter-button ${!viewArchived ? 'active' : ''}`}
+              className={`gallery-filter-button ${activeTab === 'search' ? 'active' : ''}`}
+              onClick={handleClickSearch}
+            >
+              Búsqueda
+            </button>
+
+            {/* Botón "Filtrados" */}
+            <button
+              className={`gallery-filter-button ${activeTab === 'filtrados' ? 'active' : ''}`}
               onClick={showNonArchived}
             >
               Filtrados
             </button>
+
+            {/* Botón "Archivados" */}
             <button
-              className={`gallery-filter-button ${viewArchived ? 'active' : ''}`}
+              className={`gallery-filter-button ${activeTab === 'archivados' ? 'active' : ''}`}
               onClick={showArchived}
             >
               Archivados
@@ -229,37 +282,103 @@ const Gallery = () => {
           </div>
         </div>
 
-        {/* Grid de imágenes */}
-        <div className="gallery-grid">
-          {displayedImages.map((image, index) => (
-            <div
-              key={`${image.id}-${index}`}
-              className="gallery-thumbnail"
-              onClick={() => handleSelectImage(image)}
+        {/* Barra de búsqueda, visible solo si activeTab === 'search' */}
+        {isSearchTabActive && (
+          <div style={{ marginBottom: "20px" }}>
+            <form
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px"
+              }}
+              onSubmit={handleSearchSubmit}
             >
-              <img
-                src={getImageUrl(image.filename)}
-                alt={image.original_name || image.filename}
-                className="gallery-thumbnail-img"
+              <input
+                type="text"
+                placeholder="Ingresa el filename exacto..."
+                value={searchFileName}
+                onChange={(e) => setSearchFileName(e.target.value)}
+                style={{
+                  width: "300px",
+                  padding: "8px",
+                  borderRadius: "5px",
+                  border: "2px solid #ccc"
+                }}
               />
-              <p className="gallery-thumbnail-label">
-                {image.original_name || image.filename}
-              </p>
-            </div>
-          ))}
-        </div>
+              <button
+                type="submit"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "5px",
+                  border: "none",
+                  backgroundColor: "#2196F3",
+                  color: "#fff",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center"
+                }}
+              >
+                <FaSearch />
+              </button>
+            </form>
 
-        {/* Botón para cargar más */}
-        {allImages.length >= currentPage * imagesPerPage && (
-          <div className="gallery-load-more">
-            <button className="gallery-load-more-button" onClick={loadMoreImages}>
-              Cargar más imágenes
-            </button>
+            {/* Mostrar resultado (si existe) */}
+            {searchedImageObj && (
+              <div style={{ marginTop: "20px" }}>
+                <img
+                  src={getImageUrl(searchedImageObj.filename)}
+                  alt={searchedImageObj.original_name || searchedImageObj.filename}
+                  style={{
+                    maxWidth: "200px",
+                    border: "2px solid #ccc",
+                    borderRadius: "6px",
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleSelectImage(searchedImageObj)}
+                />
+                <p style={{ fontSize: "0.9em", color: "#555" }}>
+                  {searchedImageObj.original_name || searchedImageObj.filename}
+                </p>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* Grilla de imágenes (solo si la pestaña activa NO es "search") */}
+        {activeTab !== 'search' && (
+          <>
+            <div className="gallery-grid">
+              {displayedImages.map((image, index) => (
+                <div
+                  key={`${image.id}-${index}`}
+                  className="gallery-thumbnail"
+                  onClick={() => handleSelectImage(image)}
+                >
+                  <img
+                    src={getImageUrl(image.filename)}
+                    alt={image.original_name || image.filename}
+                    className="gallery-thumbnail-img"
+                  />
+                  <p className="gallery-thumbnail-label">
+                    {image.original_name || image.filename}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Botón "Cargar más imágenes" si corresponden */}
+            {allImages.length >= currentPage * imagesPerPage && (
+              <div className="gallery-load-more">
+                <button className="gallery-load-more-button" onClick={loadMoreImages}>
+                  Cargar más imágenes
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Panel de previsualización */}
+      {/* Panel de previsualización (selectedImage) */}
       <div className="gallery-preview-section">
         {selectedImage && (
           <div className="gallery-preview">
@@ -274,7 +393,7 @@ const Gallery = () => {
               onClick={() => setIsFullScreen(true)}
             />
             <div className="gallery-preview-buttons">
-              {/* Botón que cambia Archivar/Restaurar según archived */}
+              {/* Botón para Archivar/Restaurar */}
               <button 
                 className="gallery-archive-button" 
                 onClick={openConfirmArchiveModal}
@@ -282,7 +401,7 @@ const Gallery = () => {
                 {archiveButtonText}
               </button>
               
-              {/* El botón Borrar solo aparece si es usuario admin */}
+              {/* Botón para Borrar (solo admin) */}
               {loggedUser === 'admin' && (
                 <button 
                   className="gallery-delete-button" 
@@ -381,7 +500,7 @@ const Gallery = () => {
         </button>
       </Modal>
 
-      {/* Vista a pantalla completa con zoom y paneo */}
+      {/* Vista a pantalla completa (fullscreen) */}
       {isFullScreen && selectedImage && (
         <div
           className="fullscreen-overlay"
@@ -403,7 +522,9 @@ const Gallery = () => {
                 <div className="fullscreen-controls" onClick={(e) => e.stopPropagation()}>
                   <button onClick={(e) => { e.stopPropagation(); zoomIn(); }}>+</button>
                   <button onClick={(e) => { e.stopPropagation(); zoomOut(); }}>-</button>
-                  <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>Reset</button>
+                  <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>
+                    Reset
+                  </button>
                 </div>
                 <TransformComponent>
                   <img

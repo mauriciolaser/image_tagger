@@ -23,6 +23,45 @@ if ($conn->connect_error) {
 
 $publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
 
+/**
+ * NUEVO: Revisar si viene ?filename=...
+ * Si viene, devolvemos SÓLO esa imagen (si existe), con su ID, archived, etc.
+ */
+$filenameParam = isset($_GET['filename']) ? trim($_GET['filename']) : '';
+if (!empty($filenameParam)) {
+    // Consulta exacta por filename
+    $sql = "SELECT id, filename, original_name, archived, uploaded_at
+            FROM images
+            WHERE filename = ?
+            LIMIT 1";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $filenameParam);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+
+    $images = [];
+    while ($row = $result->fetch_assoc()) {
+        $row['public_url'] = $publicUrlBase . "getImage.php?file=" . urlencode($row['filename']);
+        $images[] = $row;
+    }
+
+    $conn->close();
+
+    // Salida JSON y terminamos
+    echo json_encode([
+        "success" => true,
+        "count" => count($images),
+        "images" => $images
+    ]);
+    exit;
+}
+
+/**
+ * Si NO vino ?filename=..., usamos la lógica que ya tenías
+ * (filtrado por ?archived=..., ?with_tags=..., etc.)
+ */
+
 // Recibimos 'archived' y 'with_tags' de $_GET
 $archivedParam = isset($_GET['archived']) ? intval($_GET['archived']) : 0;
 $withTagsParam = isset($_GET['with_tags']) ? $_GET['with_tags'] : null; 
