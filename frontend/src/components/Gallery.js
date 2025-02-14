@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { FaSearch } from 'react-icons/fa'; // Para el ícono de lupa
+import { FaSearch } from 'react-icons/fa';
+import LoadingIcon from './LoadingIcon'; // <--- Importa tu componente de carga
+
 import './Gallery.css';
 
 // Configura el elemento raíz para react-modal
@@ -47,6 +49,9 @@ const Gallery = () => {
   const [searchFileName, setSearchFileName] = useState('');
   const [searchedImageObj, setSearchedImageObj] = useState(null);
 
+  // Estado para manejar la carga
+  const [loading, setLoading] = useState(false);
+
   // Rutas de la API
   const API_URL = process.env.REACT_APP_API_URL;     
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL; 
@@ -70,6 +75,7 @@ const Gallery = () => {
    */
   const fetchImages = async (page, archivedValor) => {
     try {
+      setLoading(true);
       const response = await axios.get(API_URL, {
         params: { 
           action: "getImages", 
@@ -86,6 +92,8 @@ const Gallery = () => {
       }
     } catch (error) {
       console.error('Error fetching images:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,7 +174,7 @@ const Gallery = () => {
 
   // -------------- Botones para Filtrados/Archivados/Cargar más --------------
   const showNonArchived = () => {
-    setActiveTab("filtrados"); // <-- nuevo
+    setActiveTab("filtrados");
     setViewArchived(false);
     setCurrentPage(1);
     setAllImages([]);
@@ -174,7 +182,7 @@ const Gallery = () => {
   };
 
   const showArchived = () => {
-    setActiveTab("archivados"); // <-- nuevo
+    setActiveTab("archivados");
     setViewArchived(true);
     setCurrentPage(1);
     setAllImages([]);
@@ -189,16 +197,10 @@ const Gallery = () => {
 
   // -------------- Modo Búsqueda --------------
   const handleClickSearch = () => {
-    // Cuando clicamos "Búsqueda", activamos esa pestaña
+    // Activamos la pestaña "search"
     setActiveTab("search");
-    // Si ya teníamos un 'searchedImageObj' o algo, no lo limpiamos a menos que quieras
-    // (Depende de la preferencia. Si deseas limpiar cada vez, haz setSearchedImageObj(null))
   };
 
-  // Al cambiar la pestaña a Filtrados/Archivados, no se anula la búsqueda, 
-  // pero dejaremos de mostrar la barra de búsqueda (ver lógica en return).
-  
-  // Manejo de input + Enter
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     handleSearch();
@@ -210,6 +212,7 @@ const Gallery = () => {
       return;
     }
     try {
+      setLoading(true);
       const response = await axios.get(API_URL, {
         params: {
           action: "getImages",
@@ -225,6 +228,8 @@ const Gallery = () => {
     } catch (error) {
       console.error("Error al buscar la imagen:", error);
       setSearchedImageObj(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -246,7 +251,7 @@ const Gallery = () => {
       ? `Se restauró exitosamente la imagen "${archiveImageName}"`
       : `Se archivó exitosamente la imagen "${archiveImageName}"`;
 
-  // Lógica para mostrar/ocultar la barra de búsqueda:
+  // Para mostrar/ocultar la barra de búsqueda
   const isSearchTabActive = (activeTab === "search");
 
   return (
@@ -254,6 +259,7 @@ const Gallery = () => {
       <div className="gallery-main-section">
         <h2>Galería de imágenes</h2>
 
+        {/* Controles (siempre visibles) */}
         <div className="gallery-controls">
           <div className="gallery-filter-buttons">
             {/* Botón "Búsqueda" */}
@@ -322,57 +328,74 @@ const Gallery = () => {
               </button>
             </form>
 
-            {/* Mostrar resultado (si existe) */}
-            {searchedImageObj && (
-              <div style={{ marginTop: "20px" }}>
-                <img
-                  src={getImageUrl(searchedImageObj.filename)}
-                  alt={searchedImageObj.original_name || searchedImageObj.filename}
-                  style={{
-                    maxWidth: "200px",
-                    border: "2px solid #ccc",
-                    borderRadius: "6px",
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => handleSelectImage(searchedImageObj)}
-                />
-                <p style={{ fontSize: "0.9em", color: "#555" }}>
-                  {searchedImageObj.original_name || searchedImageObj.filename}
-                </p>
+            {/* Si está cargando en modo búsqueda, mostramos el loading en lugar del resultado */}
+            {loading ? (
+              <div style={{ marginTop: 20 }}>
+                <LoadingIcon />
               </div>
+            ) : (
+              // Mostrar resultado (si existe) 
+              searchedImageObj && (
+                <div style={{ marginTop: "20px" }}>
+                  <img
+                    src={getImageUrl(searchedImageObj.filename)}
+                    alt={searchedImageObj.original_name || searchedImageObj.filename}
+                    style={{
+                      maxWidth: "200px",
+                      border: "2px solid #ccc",
+                      borderRadius: "6px",
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleSelectImage(searchedImageObj)}
+                  />
+                  <p style={{ fontSize: "0.9em", color: "#555" }}>
+                    {searchedImageObj.original_name || searchedImageObj.filename}
+                  </p>
+                </div>
+              )
             )}
           </div>
         )}
 
-        {/* Grilla de imágenes (solo si la pestaña activa NO es "search") */}
+        {/* Si NO estamos en "search", mostramos la grilla o el loading */}
         {activeTab !== 'search' && (
           <>
-            <div className="gallery-grid">
-              {displayedImages.map((image, index) => (
-                <div
-                  key={`${image.id}-${index}`}
-                  className="gallery-thumbnail"
-                  onClick={() => handleSelectImage(image)}
-                >
-                  <img
-                    src={getImageUrl(image.filename)}
-                    alt={image.original_name || image.filename}
-                    className="gallery-thumbnail-img"
-                  />
-                  <p className="gallery-thumbnail-label">
-                    {image.original_name || image.filename}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Botón "Cargar más imágenes" si corresponden */}
-            {allImages.length >= currentPage * imagesPerPage && (
-              <div className="gallery-load-more">
-                <button className="gallery-load-more-button" onClick={loadMoreImages}>
-                  Cargar más imágenes
-                </button>
+            {loading ? (
+              // Si estamos cargando, mostramos el loading en lugar de la grilla
+              <div style={{ marginTop: 20, textAlign: 'center' }}>
+                <LoadingIcon />
               </div>
+            ) : (
+              <>
+                {/* Grilla de imágenes */}
+                <div className="gallery-grid">
+                  {displayedImages.map((image, index) => (
+                    <div
+                      key={`${image.id}-${index}`}
+                      className="gallery-thumbnail"
+                      onClick={() => handleSelectImage(image)}
+                    >
+                      <img
+                        src={getImageUrl(image.filename)}
+                        alt={image.original_name || image.filename}
+                        className="gallery-thumbnail-img"
+                      />
+                      <p className="gallery-thumbnail-label">
+                        {image.original_name || image.filename}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Botón "Cargar más imágenes" si corresponde */}
+                {allImages.length >= currentPage * imagesPerPage && (
+                  <div className="gallery-load-more">
+                    <button className="gallery-load-more-button" onClick={loadMoreImages}>
+                      Cargar más imágenes
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -394,17 +417,17 @@ const Gallery = () => {
             />
             <div className="gallery-preview-buttons">
               {/* Botón para Archivar/Restaurar */}
-              <button 
-                className="gallery-archive-button" 
+              <button
+                className="gallery-archive-button"
                 onClick={openConfirmArchiveModal}
               >
                 {archiveButtonText}
               </button>
-              
+
               {/* Botón para Borrar (solo admin) */}
               {loggedUser === 'admin' && (
-                <button 
-                  className="gallery-delete-button" 
+                <button
+                  className="gallery-delete-button"
                   onClick={openConfirmDeleteModal}
                 >
                   Borrar Imagen
@@ -425,14 +448,14 @@ const Gallery = () => {
           ¿Estás seguro que quieres borrar la imagen "{deleteImageName}"?
         </h2>
         <div className="gallery-modal-buttons">
-          <button 
-            className="gallery-modal-confirm" 
+          <button
+            className="gallery-modal-confirm"
             onClick={deleteImage}
           >
             Continuar
           </button>
-          <button 
-            className="gallery-modal-cancel" 
+          <button
+            className="gallery-modal-cancel"
             onClick={() => setConfirmDeleteModalOpen(false)}
           >
             Cancelar
@@ -450,15 +473,15 @@ const Gallery = () => {
           {archiveModalText}
         </h2>
         <div className="gallery-modal-buttons">
-          <button 
-            onClick={handleArchiveToggle} 
-            disabled={isArchiving} 
+          <button
+            onClick={handleArchiveToggle}
+            disabled={isArchiving}
             className="gallery-archive-button"
           >
             {isArchiving ? "Procesando..." : "Continuar"}
           </button>
-          <button 
-            className="gallery-modal-cancel" 
+          <button
+            className="gallery-modal-cancel"
             onClick={() => setConfirmArchiveModalOpen(false)}
           >
             Cancelar
@@ -475,8 +498,8 @@ const Gallery = () => {
         <h2 className="gallery-modal-title">
           Se borró exitosamente la imagen "{deleteImageName}"
         </h2>
-        <button 
-          className="gallery-modal-close" 
+        <button
+          className="gallery-modal-close"
           onClick={() => setSuccessDeleteModalOpen(false)}
         >
           Cerrar
@@ -492,8 +515,8 @@ const Gallery = () => {
         <h2 className="gallery-modal-title">
           {successArchiveText}
         </h2>
-        <button 
-          className="gallery-modal-close" 
+        <button
+          className="gallery-modal-close"
           onClick={() => setSuccessArchiveModalOpen(false)}
         >
           Cerrar

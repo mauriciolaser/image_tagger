@@ -1,0 +1,40 @@
+/* Cubre toda la ventana con un fondo semitransparente */
+.loading-icon-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Imagen con animación "aleatoria" */
+  .loading-icon-img {
+    width: 100px; /* ajusta el tamaño base si lo deseas */
+    height: auto;
+    animation: randomMovement 3s infinite ease-in-out;
+  }
+  
+  /* Keyframes para simular movimiento "al azar" + cambio de escala */
+  @keyframes randomMovement {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    25% {
+      transform: translate(-30px, 20px) scale(1.2);
+    }
+    50% {
+      transform: translate(40px, -20px) scale(1.4);
+    }
+    75% {
+      transform: translate(-20px, 10px) scale(1.1);
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+  }
+  

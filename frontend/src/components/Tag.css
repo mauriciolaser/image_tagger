@@ -485,3 +485,144 @@
   display: block;
   margin-top: 10px;
 }
+
+/* ===== Botón Archivar/Restaurar (similar a Gallery) ===== */
+.tag-archive-button {
+  background: transparent;
+  color: #2196F3;
+  border: 2px solid #2196F3;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  margin-top: 10px; /* un pequeño margen */
+}
+
+.tag-archive-button:disabled {
+  background: #ddd;
+  color: #777;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+.tag-archive-button:hover {
+  background-color: #2196F3;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+/* ===== Modales para archivar/restaurar ===== */
+.tag-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.tag-modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  margin: 0 auto;
+  position: relative;
+  text-align: center;
+}
+
+/* Botones dentro del modal */
+.tag-modal-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.tag-archive-confirm {
+  background-color: #4CAF50; /* verde */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 25px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-archive-confirm:hover {
+  background-color: #388E3C;
+}
+
+.tag-modal-cancel, .tag-modal-close {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 25px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-modal-cancel:hover,
+.tag-modal-close:hover {
+  background-color: #1976D2;
+}
+
+/* Contenedor del modal con imagen */
+.tag-modal-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Imagen fuera del modal */
+.tag-modal-image {
+  position: absolute;
+  top: -80px; /* Ajusta según el tamaño de la imagen */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px; /* Ajusta el tamaño según necesites */
+  height: auto;
+  z-index: 1100;
+}
+
+/* Ajuste para "Tags de otros" inicialmente desplegados */
+.tag-list-others-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.toggle-icon {
+  display: inline-block;
+  width: 20px;
+  text-align: center;
+  margin-right: 5px;
+}
+
+@media (max-width: 768px) {
+  .tag-search-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .search-input-row {
+    display: flex;
+    width: 100%;
+  }
+
+  .search-input-row input {
+    flex: 1;
+  }
+}

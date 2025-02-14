@@ -2,25 +2,25 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import LoadingIcon from './LoadingIcon'; 
 import './Tag.css';
 
 Modal.setAppElement('#root');
 
 const Tags = () => {
+  // == Estados principales ==
   const [allImages, setAllImages] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const imagesPerPage = 300;
 
-  // Filtro principal: "all", "with", "without"
-  const [filter, setFilter] = useState("with");
+  const [filter, setFilter] = useState("with"); // "all" | "with" | "without"
 
   const [imageTagsMap, setImageTagsMap] = useState({});
-
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImageTags, setSelectedImageTags] = useState([]);
+  const [showOtherTags, setShowOtherTags] = useState(true);
   const [selectedImageOtherTags, setSelectedImageOtherTags] = useState([]);
-  const [showOtherTags, setShowOtherTags] = useState(false);
 
   const [tagText, setTagText] = useState('');
   const [message, setMessage] = useState('');
@@ -30,26 +30,31 @@ const Tags = () => {
 
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  // [NUEVO] Estados para la barra "Buscar" (una sola imagen por nombre)
-  const [searchMode, setSearchMode] = useState(false); // si está activa la barra de búsqueda
+  // Barra búsqueda
+  const [searchMode, setSearchMode] = useState(false);
   const [searchFileName, setSearchFileName] = useState('');
   const [searchedImageUrl, setSearchedImageUrl] = useState('');
 
-  // [NUEVO] Estados para búsquedas (tags incluidos / excluidos) - solo para 'with'
+  // Tags incluidos / excluidos
   const [includedTags, setIncludedTags] = useState([]);
   const [excludedTags, setExcludedTags] = useState([]);
   const [includedTagInput, setIncludedTagInput] = useState('');
   const [excludedTagInput, setExcludedTagInput] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL;    // getImages.php / getTaggedImages (si action)
-  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL; // getImage.php?file=
+  // Archivado
+  const [confirmArchiveModalOpen, setConfirmArchiveModalOpen] = useState(false);
+  const [successArchiveModalOpen, setSuccessArchiveModalOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveImageName, setArchiveImageName] = useState('');
 
-  // Generar la URL pública de la imagen
-  const getImageUrl = (filename) => {
-    return `${IMAGE_URL}&file=${encodeURIComponent(filename)}`;
-  };
+  // == Estados de carga separados ==
+  const [loadingImages, setLoadingImages] = useState(false); // Solo para traer imágenes
+  const [loadingTags, setLoadingTags] = useState(false);     // Para traer tags
 
-  // Al montar, obtener user_id
+  const API_URL = process.env.REACT_APP_API_URL;
+  const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
+
+  // == Al montar, obtener userId ==
   useEffect(() => {
     const storedUserId = localStorage.getItem('user_id');
     if (storedUserId) {
@@ -59,26 +64,40 @@ const Tags = () => {
     }
   }, []);
 
-  // Carga inicial por defecto => "with"
+  // == Carga inicial: "with" ==
   useEffect(() => {
     if (userId) {
-      fetchImages(1, true, 1); // con tags => getTaggedImages
+      fetchImages(1, true, 1); // with_tags=1
     }
   }, [userId]);
 
-  // Manejo de la paginación en el front
+  // == Paginación front ==
   useEffect(() => {
     setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
   }, [allImages, currentPage]);
 
-  /**
-   * Llamada a getTaggedImages (con/ sin tags).
-   * @param {number} page
-   * @param {boolean} reset
-   * @param {number|null} withTagsParam - 1 => con tags, 0 => sin tags, null => no filtra (aunque no se usa)
-   */
+  // == Cada vez que hay displayedImages, pedimos sus tags (si no los tenemos) ==
+  useEffect(() => {
+    if (userId && displayedImages.length > 0) {
+      const idsToFetch = displayedImages
+        .map((img) => img.id)
+        .filter((id) => !(id in imageTagsMap));
+
+      if (idsToFetch.length > 0) {
+        fetchAllTagsForGrid(idsToFetch);
+      }
+    }
+  }, [displayedImages, userId, imageTagsMap]);
+
+  // == Generar URL de la imagen ==
+  const getImageUrl = (filename) => (
+    `${IMAGE_URL}&file=${encodeURIComponent(filename)}`
+  );
+
+  // == Llamada a getTaggedImages ==
   const fetchImages = async (page, reset = false, withTagsParam = null) => {
     try {
+      setLoadingImages(true);
       const params = {
         action: 'getTaggedImages',
         page,
@@ -89,7 +108,6 @@ const Tags = () => {
       }
 
       const response = await axios.get(API_URL, { params });
-
       if (response.data && Array.isArray(response.data.images)) {
         if (reset) {
           setAllImages(response.data.images);
@@ -100,22 +118,20 @@ const Tags = () => {
       }
     } catch (error) {
       console.error("Error fetching images:", error);
+    } finally {
+      setLoadingImages(false);
     }
   };
 
-  /**
-   * [NUEVO] Obtener todas las imágenes usando getImages.php (sin 'action' ni 'with_tags').
-   * Aplica exclude_ids para paginación simulada.
-   */
+  // == Traer todas las imágenes (getImages.php) ==
   const fetchAllImages = async (page, reset = false) => {
     try {
+      setLoadingImages(true);
       const excludeIds = reset ? [] : allImages.map((img) => img.id);
       const params = {
         archived: 0,
         exclude_ids: excludeIds.join(',')
       };
-
-      // Este endpoint es getImages.php (según tu snippet), sin action
       const response = await axios.get(API_URL, { params });
       if (response.data && response.data.success && Array.isArray(response.data.images)) {
         if (reset) {
@@ -127,12 +143,15 @@ const Tags = () => {
       }
     } catch (error) {
       console.error("Error fetching all images:", error);
+    } finally {
+      setLoadingImages(false);
     }
   };
 
-  // Trae tags (de varios ids) para la grilla
+  // == Obtener tags de la grilla (varios IDs) ==
   const fetchAllTagsForGrid = async (imageIds) => {
     try {
+      setLoadingTags(true);
       const response = await axios.get(API_URL, {
         params: {
           action: "getAllTags",
@@ -144,40 +163,23 @@ const Tags = () => {
       }
     } catch (error) {
       console.error("Error fetching all tags:", error);
+    } finally {
+      setLoadingTags(false);
     }
   };
 
-  // Cada vez que cambia displayedImages, obtenemos tags
-  useEffect(() => {
-    if (userId && displayedImages.length > 0) {
-      const idsToFetch = displayedImages
-        .map((img) => img.id)
-        .filter((id) => !(id in imageTagsMap));
-      if (idsToFetch.length > 0) {
-        fetchAllTagsForGrid(idsToFetch);
-      }
-    }
-  }, [displayedImages, userId, imageTagsMap]);
-
-  // Chequea si un array de {id, name} cumple con includedTags y excludedTags
+  // == Filtrado local (con / sin tags, incluidos/excluidos) ==
   const matchIncludedExcluded = (tags) => {
     const tagNames = tags.map((t) => t.name.toLowerCase());
-    // Must contain ALL included
     for (let inc of includedTags) {
-      if (!tagNames.includes(inc.toLowerCase())) {
-        return false;
-      }
+      if (!tagNames.includes(inc.toLowerCase())) return false;
     }
-    // Must NOT contain ANY excluded
     for (let exc of excludedTags) {
-      if (tagNames.includes(exc.toLowerCase())) {
-        return false;
-      }
+      if (tagNames.includes(exc.toLowerCase())) return false;
     }
     return true;
   };
 
-  // Filtrado local final, depende de filter
   const filteredImages = displayedImages.filter((image) => {
     const tags = imageTagsMap[image.id] || [];
     if (filter === "with") {
@@ -185,24 +187,24 @@ const Tags = () => {
     } else if (filter === "without") {
       return tags.length === 0;
     } else if (filter === "all") {
-      // sin filtrar
       return true;
     }
     return true;
   });
 
-  // Seleccionar una imagen
+  // == Seleccionar imagen ==
   const handleSelectImage = (image) => {
     setSelectedImage(image);
     fetchImageTags(image.id);
-    setShowOtherTags(false);
     setSelectedImageOtherTags([]);
+    fetchOtherImageTags(image.id);
   };
 
-  // Obtener tags del usuario
+  // == Obtener tags del usuario para esa imagen ==
   const fetchImageTags = async (imageId) => {
     if (!userId) return;
     try {
+      setLoadingTags(true);
       const response = await axios.get(API_URL, {
         params: {
           action: "getImageTags",
@@ -218,13 +220,16 @@ const Tags = () => {
     } catch (error) {
       console.error("Error fetching image tags:", error);
       setSelectedImageTags([]);
+    } finally {
+      setLoadingTags(false);
     }
   };
 
-  // Obtener tags de otros usuarios
+  // == Obtener tags de otros ==
   const fetchOtherImageTags = async (imageId) => {
     if (!userId) return;
     try {
+      setLoadingTags(true);
       const response = await axios.get(API_URL, {
         params: {
           action: "getImageTags",
@@ -241,10 +246,12 @@ const Tags = () => {
     } catch (error) {
       console.error("Error fetching other image tags:", error);
       setSelectedImageOtherTags([]);
+    } finally {
+      setLoadingTags(false);
     }
   };
 
-  // Agregar tags (separados por comas)
+  // == Agregar tags ==
   const handleTagSubmit = async (e) => {
     e.preventDefault();
     if (!selectedImage || !tagText.trim() || !userId) return;
@@ -252,6 +259,7 @@ const Tags = () => {
     const splittedTags = tagText.split(",").map((t) => t.trim()).filter(Boolean);
     if (splittedTags.length === 0) return;
 
+    setLoadingTags(true);
     let successCount = 0;
     for (const singleTag of splittedTags) {
       try {
@@ -270,7 +278,8 @@ const Tags = () => {
     }
 
     await fetchImageTags(selectedImage.id);
-    fetchAllTagsForGrid([selectedImage.id]);
+    await fetchAllTagsForGrid([selectedImage.id]);
+    setLoadingTags(false);
 
     if (successCount > 0) {
       setModalMessage(`Se agregaron ${successCount} tag(s) correctamente.`);
@@ -281,10 +290,11 @@ const Tags = () => {
     setTagText('');
   };
 
-  // Borrar un tag
+  // == Borrar un tag ==
   const handleTagDelete = async (tagId, tagName) => {
     if (!selectedImage || !userId) return;
     try {
+      setLoadingTags(true);
       const response = await axios.post(API_URL, {
         action: "deleteTag",
         image_id: selectedImage.id,
@@ -293,7 +303,7 @@ const Tags = () => {
       });
       if (response.data.success) {
         await fetchImageTags(selectedImage.id);
-        fetchAllTagsForGrid([selectedImage.id]);
+        await fetchAllTagsForGrid([selectedImage.id]);
         setModalMessage(`Borraste el tag "${tagName}"`);
         setModalOpen(true);
       } else {
@@ -302,10 +312,12 @@ const Tags = () => {
     } catch (error) {
       console.error("Error deleting tag:", error);
       setMessage('Error al eliminar el tag.');
+    } finally {
+      setLoadingTags(false);
     }
   };
 
-  // Botón "Cargar más"
+  // == Botón "Cargar más" ==
   const loadMoreImages = () => {
     const nextPage = currentPage + 1;
     if (filter === 'with') {
@@ -317,16 +329,15 @@ const Tags = () => {
     }
   };
 
-  // Botón "Todos"
+  // == Botones de filtro ==
   const handleShowAllImages = () => {
     setFilter("all");
     setCurrentPage(1);
     setAllImages([]);
-    setSearchMode(false);  // Desactivamos la barra de búsqueda
+    setSearchMode(false);
     fetchAllImages(1, true);
   };
 
-  // Botón "Con Tags"
   const handleShowWithTags = () => {
     setFilter("with");
     setCurrentPage(1);
@@ -335,7 +346,6 @@ const Tags = () => {
     fetchImages(1, true, 1);
   };
 
-  // Botón "Sin Tags"
   const handleShowWithoutTags = () => {
     setFilter("without");
     setCurrentPage(1);
@@ -344,9 +354,8 @@ const Tags = () => {
     fetchImages(1, true, 0);
   };
 
-  // Botón "Buscar" - togglear la barra de búsqueda
+  // == Modo Búsqueda por filename ==
   const toggleSearchMode = () => {
-    // Si se desactiva, limpiamos
     if (searchMode) {
       setSearchFileName('');
       setSearchedImageUrl('');
@@ -354,10 +363,10 @@ const Tags = () => {
     setSearchMode(!searchMode);
   };
 
-  // Búsqueda de una imagen por nombre exacto (getImage.php?file=...)
   const handleSearchByFilename = async () => {
     if (!searchFileName.trim()) return;
     try {
+      setLoadingImages(true);
       const response = await axios.get(
         `${IMAGE_URL}&file=${encodeURIComponent(searchFileName.trim())}`,
         { responseType: 'blob' }
@@ -366,14 +375,18 @@ const Tags = () => {
         const blob = response.data;
         const objectUrl = URL.createObjectURL(blob);
         setSearchedImageUrl(objectUrl);
+      } else {
+        setSearchedImageUrl('');
       }
     } catch (error) {
       console.error("Error al buscar la imagen:", error);
       setSearchedImageUrl('');
+    } finally {
+      setLoadingImages(false);
     }
   };
 
-  // Manejo tags incluidos
+  // == Manejo tags incluidos/excluidos ==
   const handleAddIncludedTag = () => {
     if (!includedTagInput.trim()) return;
     if (!includedTags.includes(includedTagInput.trim())) {
@@ -385,7 +398,6 @@ const Tags = () => {
     setIncludedTags((prev) => prev.filter((t) => t !== tag));
   };
 
-  // Manejo tags excluidos
   const handleAddExcludedTag = () => {
     if (!excludedTagInput.trim()) return;
     if (!excludedTags.includes(excludedTagInput.trim())) {
@@ -397,12 +409,64 @@ const Tags = () => {
     setExcludedTags((prev) => prev.filter((t) => t !== tag));
   };
 
+  // == Archivar/Restaurar ==
+  const archiveButtonText =
+    selectedImage && selectedImage.archived === 1
+      ? "Restaurar Imagen"
+      : "Archivar Imagen";
+
+  const archiveModalText =
+    selectedImage && selectedImage.archived === 1
+      ? `¿Restaurar la imagen "${archiveImageName}"?`
+      : `¿Archivar la imagen "${archiveImageName}"?`;
+
+  const successArchiveText =
+    selectedImage && selectedImage.archived === 1
+      ? `Se restauró exitosamente la imagen "${archiveImageName}"`
+      : `Se archivó exitosamente la imagen "${archiveImageName}"`;
+
+  const openConfirmArchiveModal = () => {
+    if (!selectedImage) return;
+    setArchiveImageName(selectedImage.original_name || selectedImage.filename);
+    setConfirmArchiveModalOpen(true);
+  };
+
+  const handleArchiveToggle = async () => {
+    if (!selectedImage) return;
+    setIsArchiving(true);
+    try {
+      setLoadingImages(true);
+      const newArchivedValue = selectedImage.archived === 1 ? 0 : 1;
+      const response = await axios.post(`${API_URL}?action=archiveImage`, {
+        image_id: selectedImage.id,
+        archived: newArchivedValue
+      });
+
+      if (response.data.success) {
+        setConfirmArchiveModalOpen(false);
+        setSuccessArchiveModalOpen(true);
+        setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
+        setSelectedImage(null);
+      } else {
+        alert(response.data.message || 'Error al modificar estado de la imagen.');
+      }
+    } catch (error) {
+      console.error('Error toggling archive state:', error);
+      alert('Error al modificar estado de la imagen.');
+    } finally {
+      setIsArchiving(false);
+      setLoadingImages(false);
+    }
+  };
+
+  // ====================================================
+  // ==================== RENDER ========================
+  // ====================================================
   return (
     <div className="tag-container">
       <div className="tag-main-section">
         <h2>Herramienta de taggeo</h2>
 
-        {/* Barra principal de botones */}
         <div className="tag-filter-bar">
           <button
             className={filter === "all" ? "active" : ""}
@@ -410,22 +474,18 @@ const Tags = () => {
           >
             Todos
           </button>
-
-          {/* Nuevo botón "Buscar" para activar la barra de búsqueda */}
           <button
             className={searchMode ? "active" : ""}
             onClick={toggleSearchMode}
           >
             Búsqueda
           </button>
-
           <button
             className={filter === "with" ? "active" : ""}
             onClick={handleShowWithTags}
           >
             Con Tags
           </button>
-
           <button
             className={filter === "without" ? "active" : ""}
             onClick={handleShowWithoutTags}
@@ -434,9 +494,9 @@ const Tags = () => {
           </button>
         </div>
 
-        {/* Barra de búsqueda activada con "Buscar" */}
+        {/* Búsqueda por filename */}
         {searchMode && (
-          <div>
+          <div style={{ marginBottom: '20px' }}>
             <div className="search-by-filename">
               <input
                 type="text"
@@ -446,18 +506,25 @@ const Tags = () => {
               />
               <button onClick={handleSearchByFilename}>Buscar</button>
             </div>
-            {searchedImageUrl && (
-              <div className="searched-image-result">
-                <img src={searchedImageUrl} alt="Resultado" />
+
+            {/* Muestra loading si se está buscando */}
+            {loadingImages ? (
+              <div style={{ marginTop: 20 }}>
+                <LoadingIcon />
               </div>
+            ) : (
+              searchedImageUrl && (
+                <div className="searched-image-result" style={{ marginTop: 20 }}>
+                  <img src={searchedImageUrl} alt="Resultado" />
+                </div>
+              )
             )}
           </div>
         )}
 
-        {/* SOLO si filter === "with" mostramos la búsqueda de tags incluidos/excluidos */}
+        {/* Si filter="with", mostramos campos para tags incluidos/excluidos */}
         {filter === "with" && (
           <div className="tag-search-container">
-            {/* Tags incluidos */}
             <div className="tag-search-included">
               <label className="search-label">Tags incluidos:</label>
               <div className="search-input-row">
@@ -479,7 +546,6 @@ const Tags = () => {
               </div>
             </div>
 
-            {/* Tags excluidos */}
             <div className="tag-search-excluded">
               <label className="search-label">Tags excluidos:</label>
               <div className="search-input-row">
@@ -503,33 +569,40 @@ const Tags = () => {
           </div>
         )}
 
-        {/* Grilla de imágenes (filtradas en front) */}
-        <div className="tag-images-grid">
-          {filteredImages.map((image) => (
-            <div
-              key={image.id}
-              className="tag-thumbnail"
-              onClick={() => handleSelectImage(image)}
-            >
-              <img
-                src={getImageUrl(image.filename)}
-                alt={image.original_name || image.filename}
-                className="tag-thumbnail-img"
-              />
-              <p className="tag-thumbnail-label">
-                {image.original_name || image.filename}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Botón de "Cargar más" si procede */}
-        {allImages.length >= currentPage * imagesPerPage && (
-          <div className="tag-load-more">
-            <button className="tag-load-more-button" onClick={loadMoreImages}>
-              Cargar más imágenes
-            </button>
+        {/* Zona central de imágenes: si loadingImages es true => LoadingIcon; si no => grilla */}
+        {loadingImages ? (
+          <div style={{ marginTop: 20, textAlign: 'center' }}>
+            <LoadingIcon />
           </div>
+        ) : (
+          <>
+            <div className="tag-images-grid">
+              {filteredImages.map((image) => (
+                <div
+                  key={image.id}
+                  className="tag-thumbnail"
+                  onClick={() => handleSelectImage(image)}
+                >
+                  <img
+                    src={getImageUrl(image.filename)}
+                    alt={image.original_name || image.filename}
+                    className="tag-thumbnail-img"
+                  />
+                  <p className="tag-thumbnail-label">
+                    {image.original_name || image.filename}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {allImages.length >= currentPage * imagesPerPage && (
+              <div className="tag-load-more">
+                <button className="tag-load-more-button" onClick={loadMoreImages}>
+                  Cargar más imágenes
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -545,6 +618,12 @@ const Tags = () => {
               className="tag-preview-image"
               onClick={() => setIsFullScreen(true)}
             />
+
+            {/* Botón Archivar/Restaurar */}
+            <button className="tag-archive-button" onClick={openConfirmArchiveModal}>
+              {archiveButtonText}
+            </button>
+
             <div className="tag-management">
               <div className="tag-list-container">
                 <h4>Mis Tags:</h4>
@@ -567,16 +646,10 @@ const Tags = () => {
                 )}
               </div>
 
-              {/* Tags de otros */}
               <div className="tag-list-others">
                 <div
                   className="tag-list-others-header"
-                  onClick={() => {
-                    setShowOtherTags(!showOtherTags);
-                    if (!showOtherTags) {
-                      fetchOtherImageTags(selectedImage.id);
-                    }
-                  }}
+                  onClick={() => setShowOtherTags(!showOtherTags)}
                   style={{ cursor: 'pointer', marginTop: '1rem' }}
                 >
                   <span className="toggle-icon">{showOtherTags ? '−' : '+'}</span>
@@ -601,7 +674,6 @@ const Tags = () => {
                 )}
               </div>
 
-              {/* Form para agregar un tag */}
               <div className="tag-input-wrapper">
                 <h4>Agregar un tag</h4>
                 <form className="tag-input-form" onSubmit={handleTagSubmit}>
@@ -664,22 +736,72 @@ const Tags = () => {
         </div>
       )}
 
-      {/* Modal para mensajes en acciones con tags */}
+      {/* Modal acciones con tags */}
       <Modal
         isOpen={modalOpen}
         onRequestClose={() => setModalOpen(false)}
         contentLabel="Tag asignado"
-        style={{
-          content: {
-            width: '400px',
-            height: '200px',
-            margin: 'auto',
-            textAlign: 'center'
-          }
-        }}
+        className="tag-modal-content"
+        overlayClassName="tag-modal-overlay"
       >
-        <h2>{modalMessage}</h2>
-        <button onClick={() => setModalOpen(false)}>Cerrar</button>
+        <div className="tag-modal-wrapper">
+          <img src="/image_tagger/images/tag.png" alt="Tag" className="tag-modal-image" />
+          <div className="tag-modal-inner">
+            <h2>{modalMessage}</h2>
+            <button onClick={() => setModalOpen(false)}>Cerrar</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Confirmación para Archivar/Restaurar */}
+      <Modal
+        isOpen={confirmArchiveModalOpen}
+        onRequestClose={() => setConfirmArchiveModalOpen(false)}
+        className="tag-modal-content"
+        overlayClassName="tag-modal-overlay"
+      >
+        <div className="tag-modal-wrapper">
+          <img src="/image_tagger/images/tag.png" alt="Tag" className="tag-modal-image" />
+          <div className="tag-modal-inner">
+            <h2>{archiveModalText}</h2>
+            <div className="tag-modal-buttons">
+              <button
+                onClick={handleArchiveToggle}
+                disabled={isArchiving}
+                className="tag-archive-confirm"
+              >
+                {isArchiving ? "Procesando..." : "Continuar"}
+              </button>
+              <button
+                className="tag-modal-cancel"
+                onClick={() => setConfirmArchiveModalOpen(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Éxito al Archivar/Restaurar */}
+      <Modal
+        isOpen={successArchiveModalOpen}
+        onRequestClose={() => setSuccessArchiveModalOpen(false)}
+        overlayClassName="tag-modal-overlay"
+        className="tag-modal-content"
+      >
+        <div className="tag-modal-wrapper">
+          <img src="/image_tagger/images/tag.png" alt="Tag" className="tag-modal-image" />
+          <div className="tag-modal-inner">
+            <h2>{successArchiveText}</h2>
+            <button
+              className="tag-modal-close"
+              onClick={() => setSuccessArchiveModalOpen(false)}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

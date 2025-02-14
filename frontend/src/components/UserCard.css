@@ -1,0 +1,32 @@
+/* src/components/UserCard.css */
+
+/* Contenedor principal de la tarjeta */
+.user-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    background-color: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-width: 200px;
+    margin-bottom: 20px; /* Espacio debajo de la tarjeta */
+  }
+  
+  /* Imagen de perfil */
+  .user-card-pic {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    margin-bottom: 12px;
+  }
+  
+  /* Nombre del usuario */
+  .user-card-name {
+    font-size: 1.1em;
+    color: #333;
+    text-align: center;
+  }
+  

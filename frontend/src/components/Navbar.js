@@ -1,54 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaBars, FaTimes } from 'react-icons/fa'; // Hamburguesa y "X"
+import './Navbar.css';
 
 const Navbar = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
   return (
-    <nav style={styles.navbar}>
-      <ul style={styles.navList}>
+    <nav className="navbar">
+      {/* Encabezado del Navbar (logo + ícono) */}
+      <div className="navbar-header">
+        <div className="logo-container">
+          <img
+            src="/image_tagger/images/logo.png"
+            alt="Logo"
+            className="navbar-logo"
+          />
+        </div>
+        <div className="menu-icon" onClick={toggleMenu}>
+          {menuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+        </div>
+      </div>
 
-      <li style={styles.navItem}>
-          <Link to="/gallery" style={styles.navLink}>Galería</Link>
+      {/* Lista de navegación */}
+      <ul className={`nav-list ${menuOpen ? 'expanded' : ''}`}>
+        <li className="nav-item">
+          <Link to="/gallery" className="nav-link" onClick={toggleMenu}>
+            Galería
+          </Link>
         </li>
-
-        <li style={styles.navItem}>
-          <Link to="/tag" style={styles.navLink}>Taggear</Link>
+        <li className="nav-item">
+          <Link to="/tag" className="nav-link" onClick={toggleMenu}>
+            Taggear
+          </Link>
         </li>
-
-        <li style={styles.navItem}>
-          <Link to="/image-upload" style={styles.navLink}>Upload</Link>
+        <li className="nav-item">
+          <Link to="/image-upload" className="nav-link" onClick={toggleMenu}>
+            Upload
+          </Link>
         </li>
-
-        <li style={styles.navItem}>
-          <Link to="/admin" style={styles.navLink}>Admin</Link>
+        <li className="nav-item">
+          <Link to="/admin" className="nav-link" onClick={toggleMenu}>
+            Admin
+          </Link>
         </li>
-
       </ul>
     </nav>
   );
-};
-
-// Estilos para la Navbar
-const styles = {
-  navbar: {
-    backgroundColor: '#333',
-    padding: '10px 20px',
-    color: '#fff',
-  },
-  navList: {
-    listStyle: 'none',
-    display: 'flex',
-    justifyContent: 'space-around',
-    margin: 0,
-    padding: 0,
-  },
-  navItem: {
-    margin: '0 10px',
-  },
-  navLink: {
-    color: '#fff',
-    textDecoration: 'none',
-    fontSize: '16px',
-  },
 };
 
 export default Navbar;

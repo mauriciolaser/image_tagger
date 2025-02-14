@@ -1,0 +1,110 @@
+/* ===== Navbar general (Desktop por defecto) ===== */
+.navbar {
+    display: flex;                 /* Logo, enlaces y menú en una sola línea (desktop) */
+    align-items: center;           
+    justify-content: space-between;
+    background-color: #222;
+    padding: 15px 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', sans-serif;
+  }
+  
+  /* Encabezado que agrupa logo e ícono de menú */
+  .navbar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: auto; /* En desktop, ajusta según su contenido */
+  }
+  
+  /* Logo */
+  .logo-container {
+    display: flex;
+    align-items: center;
+  }
+  .navbar-logo {
+    width: 150px;
+    height: auto;
+  }
+  
+  /* Ícono (hamburguesa/X) */
+  .menu-icon {
+    display: none;  /* solo se muestra en mobile */
+    cursor: pointer;
+    color: #fff;
+  }
+  
+  /* Lista de navegación (desktop) */
+  .nav-list {
+    list-style: none;
+    display: flex; /* por defecto en desktop, se ve en línea */
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Items y links */
+  .nav-item {
+    margin: 0;
+  }
+  .nav-link {
+    background-color: #444;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 15px;
+    border-radius: 8px;
+  }
+  .nav-link:hover {
+    background-color: #ff7b00;
+  }
+  
+  /* ===== Mobile (max-width: 768px) ===== */
+  @media (max-width: 768px) {
+    /* Mostramos el ícono de hamburguesa */
+    .menu-icon {
+      display: block;
+    }
+  
+    /* Forzamos que el navbar se apile verticalmente */
+    .navbar {
+      flex-direction: column; /* Uno debajo del otro */
+      align-items: flex-start; /* Ajusta si prefieres center */
+    }
+  
+    /* Primera línea (header) sigue en una sola fila: logo + hamburguesa */
+    .navbar-header {
+      width: 100%;
+      margin-bottom: 0;      /* Ajusta a tu gusto */
+    }
+  
+    /* OCULTAMOS los enlaces por defecto en mobile */
+    .nav-list {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      margin-top: 0;        /* Ajusta si prefieres separar un poco más */
+    }
+  
+    /* Cuando el menú está abierto (menuOpen = true), se muestran */
+    .nav-list.expanded {
+      display: flex;
+    }
+  
+    /* Ajustamos el estilo de cada item en mobile */
+    .nav-item {
+      width: 100%;
+      text-align: center;
+      margin: 5px 0;
+    }
+  
+    .nav-link {
+      display: block;
+      width: 100%;
+      padding: 10px 0;
+      max-width: 200px;
+      margin: 0 auto; /* Para centrar el link en la lista */
+    }
+  }
+  
