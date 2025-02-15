@@ -498,19 +498,30 @@ const Tags = () => {
               />
               <button onClick={handleSearchByFilename}>Buscar</button>
             </div>
+            
             {loadingImages ? (
-              <div style={{ marginTop: 20 }}>
-                <LoadingIcon />
-              </div>
-            ) : (
-              searchedImageUrl ? (
-                <div className="searched-image-result" style={{ marginTop: 20 }}>
-                  <img src={searchedImageUrl} alt="Resultado" />
-                </div>
-              ) : (
-                <p style={{ marginTop: 20 }}>No se obtuvo resultados</p>
-              )
-            )}
+  <div style={{ marginTop: 20 }}>
+    <LoadingIcon />
+  </div>
+) : (
+  searchedImageUrl ? (
+    <div className="searched-image-result" style={{ marginTop: 20 }}>
+      <img
+        src={searchedImageUrl}
+        alt="Resultado"
+        style={{ cursor: "pointer" }}
+        onClick={() =>
+          handleSelectImage({
+            filename: searchFileName,
+            original_name: searchFileName,
+          })
+        }
+      />
+    </div>
+  ) : (
+    <p style={{ marginTop: 20 }}>No se obtuvo resultados</p>
+  )
+)}
           </div>
         )}
 
