@@ -30,7 +30,7 @@ if (empty($filename)) {
 $filename = basename($filename);
 
 // 3. Ruta privada de las imágenes (según PRIVATE_IMAGES_DIR)
-$privateImagesDir = $_ENV['PRIVATE_IMAGES_DIR']; // Ej: /home/vallhzty/image_tagger/uploads
+$privateImagesDir = $_ENV['PRIVATE_IMAGES_DIR']; //
 $realPrivateDir = realpath($privateImagesDir);
 $filePath = realpath($privateImagesDir . DIRECTORY_SEPARATOR . $filename);
 
