@@ -1,0 +1,76 @@
+.archive-button {
+    background-color: #ff5555;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+  .archive-button:hover {
+    background-color: #cc4444;
+  }
+  
+  .archive-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .archive-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  
+  .archive-modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  
+  .archive-confirm {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .archive-confirm:hover {
+    background-color: #218838;
+  }
+  
+  .archive-cancel {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .archive-cancel:hover {
+    background-color: #c82333;
+  }
+  
+  .archive-close {
+    margin-top: 10px;
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .archive-close:hover {
+    background-color: #0056b3;
+  }
+  

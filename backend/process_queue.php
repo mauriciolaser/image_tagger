@@ -22,17 +22,23 @@ if ($conn->connect_error) {
     die("Error de conexión a BD: " . $conn->connect_error);
 }
 
+echo "✅ DEBUG: Conexión a MySQL exitosa\n";
+flush();
+
 // Obtener el job_id desde los argumentos de la línea de comandos
 $job_id = $argv[1] ?? null;
 if (!$job_id) {
     die("No se especificó un job_id.");
 }
 
+echo "DEBUG: job_id recibido -> $job_id\n";
+flush();
+
 // Marcar el job como "running"
 $conn->query("UPDATE import_jobs SET status = 'running' WHERE id = $job_id");
 
-$batchSize = 25;      // Procesar 5 imágenes por ciclo
-$maxAttempts = 10;   // Máximo de intentos antes de detener el proceso
+$batchSize = 25;  // Procesar imágenes en lotes
+$maxAttempts = 10; // Máximo de intentos antes de detener el proceso
 $attempts = 0;
 
 while (true) {
@@ -72,16 +78,45 @@ while (true) {
         $filename = $row['filename'];
 
         // Marcar la imagen como "processing"
-        $conn->query("UPDATE image_queue SET status = 'processing' WHERE id = $queueId");
+        if (!$conn->query("UPDATE image_queue SET status = 'processing' WHERE id = $queueId")) {
+            error_log("ERROR: No se pudo actualizar status a 'processing' para ID: $queueId - " . $conn->error);
+            continue;
+        }
 
-        // Insertar en la tabla de imágenes
-        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $filename, $filename, $_ENV['PRIVATE_IMAGES_DIR']);
+        // Obtener la ruta del archivo
+        $filePath = rtrim($_ENV['PRIVATE_IMAGES_DIR'], '/') . '/' . $filename;
+
+        // Verificar si el archivo existe antes de procesarlo
+        if (!file_exists($filePath)) {
+            error_log("ERROR: El archivo no existe: $filePath");
+            $conn->query("UPDATE image_queue SET status = 'error' WHERE id = $queueId");
+            continue;
+        }
+
+        // Generar el hash del archivo
+        $file_hash = hash_file('sha256', $filePath);
+        if (!$file_hash || strlen($file_hash) < 64) {
+            error_log("ERROR: No se pudo generar hash para el archivo $filePath");
+            $conn->query("UPDATE image_queue SET status = 'error' WHERE id = $queueId");
+            continue;
+        }
+
+        // Insertar en la tabla de imágenes con file_hash
+        $stmt = $conn->prepare("INSERT INTO images (filename, original_name, path, file_hash) VALUES (?, ?, ?, ?)");
+        if (!$stmt) {
+            error_log("ERROR: No se pudo preparar el statement para insertar en images: " . $conn->error);
+            $conn->query("UPDATE image_queue SET status = 'error' WHERE id = $queueId");
+            continue;
+        }
+        
+        $stmt->bind_param("ssss", $filename, $filename, $_ENV['PRIVATE_IMAGES_DIR'], $file_hash);
         
         if ($stmt->execute()) {
-            $conn->query("UPDATE image_queue SET status = 'done' WHERE id = $queueId");
+            if (!$conn->query("UPDATE image_queue SET status = 'done' WHERE id = $queueId")) {
+                error_log("ERROR: No se pudo actualizar status a 'done' para ID: $queueId - " . $conn->error);
+            }
         } else {
-            error_log("Error al insertar imagen en BD: " . $stmt->error);
+            error_log("ERROR: Fallo al insertar en images: " . $stmt->error);
             $conn->query("UPDATE image_queue SET status = 'error' WHERE id = $queueId");
         }
 
@@ -92,7 +127,7 @@ while (true) {
     sleep(2);
 }
 
-// Marcar el job como "completed" si no está stopped
+// Marcar el job como "completed" si no está en estado "stopped"
 $conn->query("UPDATE import_jobs SET status = 'completed' WHERE id = $job_id");
 
 $conn->close();

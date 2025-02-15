@@ -147,20 +147,33 @@ const Gallery = () => {
   const handleArchiveToggle = async () => {
     if (!selectedImage) return;
     setIsArchiving(true);
-
+  
     const newArchivedValue = selectedImage.archived === 1 ? 0 : 1;
+  
     try {
       const response = await axios.post(`${API_URL}?action=archiveImage`, {
         image_id: selectedImage.id,
         archived: newArchivedValue
       });
-
+  
       if (response.data.success) {
         setConfirmArchiveModalOpen(false);
         setSuccessArchiveModalOpen(true);
-        // Quitar la imagen de la lista
-        setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
-        setSelectedImage(null);
+  
+        // Actualizar `selectedImage` para reflejar el cambio en la UI
+        const updatedImage = { ...selectedImage, archived: newArchivedValue };
+        setSelectedImage(updatedImage);
+  
+        // Actualizar la lista de imágenes en la galería
+        setAllImages(prevImages =>
+          prevImages.map(img => (img.id === selectedImage.id ? updatedImage : img))
+        );
+  
+        // Si se restauró desde "Archivados", eliminar la imagen de la lista actual
+        if (newArchivedValue === 0 && viewArchived) {
+          setAllImages(prev => prev.filter(img => img.id !== selectedImage.id));
+          setSelectedImage(null); // Deseleccionar imagen si se removió de la lista
+        }
       } else {
         alert(response.data.message || 'Error al modificar estado de la imagen.');
       }
@@ -171,6 +184,7 @@ const Gallery = () => {
       setIsArchiving(false);
     }
   };
+ 
 
   // -------------- Botones para Filtrados/Archivados/Cargar más --------------
   const showNonArchived = () => {
@@ -207,8 +221,9 @@ const Gallery = () => {
   };
 
   const handleSearch = async () => {
+    // Si el campo está vacío, se muestra "No se obtuvo resultados"
     if (!searchFileName.trim()) {
-      alert("Debes ingresar un nombre de archivo (filename)");
+      setSearchedImageObj(null);
       return;
     }
     try {
@@ -222,7 +237,7 @@ const Gallery = () => {
       if (response.data.success && response.data.images.length > 0) {
         setSearchedImageObj(response.data.images[0]);
       } else {
-        // No se encontró
+        // No se encontró la imagen
         setSearchedImageObj(null);
       }
     } catch (error) {
@@ -275,7 +290,7 @@ const Gallery = () => {
               className={`gallery-filter-button ${activeTab === 'filtrados' ? 'active' : ''}`}
               onClick={showNonArchived}
             >
-              Filtrados
+              Filtradas
             </button>
 
             {/* Botón "Archivados" */}
@@ -283,7 +298,7 @@ const Gallery = () => {
               className={`gallery-filter-button ${activeTab === 'archivados' ? 'active' : ''}`}
               onClick={showArchived}
             >
-              Archivados
+              Archivadas
             </button>
           </div>
         </div>
@@ -328,14 +343,14 @@ const Gallery = () => {
               </button>
             </form>
 
-            {/* Si está cargando en modo búsqueda, mostramos el loading en lugar del resultado */}
+            {/* Si está cargando en modo búsqueda, mostramos el loading */}
             {loading ? (
               <div style={{ marginTop: 20 }}>
                 <LoadingIcon />
               </div>
             ) : (
-              // Mostrar resultado (si existe) 
-              searchedImageObj && (
+              // Si no se obtuvo resultado, mostramos el mensaje
+              searchedImageObj ? (
                 <div style={{ marginTop: "20px" }}>
                   <img
                     src={getImageUrl(searchedImageObj.filename)}
@@ -344,7 +359,7 @@ const Gallery = () => {
                       maxWidth: "200px",
                       border: "2px solid #ccc",
                       borderRadius: "6px",
-                      cursor: 'pointer'
+                      cursor: "pointer"
                     }}
                     onClick={() => handleSelectImage(searchedImageObj)}
                   />
@@ -352,6 +367,8 @@ const Gallery = () => {
                     {searchedImageObj.original_name || searchedImageObj.filename}
                   </p>
                 </div>
+              ) : (
+                <p style={{ marginTop: 20 }}>No se obtuvo resultados</p>
               )
             )}
           </div>
@@ -361,7 +378,6 @@ const Gallery = () => {
         {activeTab !== 'search' && (
           <>
             {loading ? (
-              // Si estamos cargando, mostramos el loading en lugar de la grilla
               <div style={{ marginTop: 20, textAlign: 'center' }}>
                 <LoadingIcon />
               </div>
@@ -387,7 +403,7 @@ const Gallery = () => {
                   ))}
                 </div>
 
-                {/* Botón "Cargar más imágenes" si corresponde */}
+                {/* Botón "Cargar más imágenes" */}
                 {allImages.length >= currentPage * imagesPerPage && (
                   <div className="gallery-load-more">
                     <button className="gallery-load-more-button" onClick={loadMoreImages}>
@@ -448,16 +464,10 @@ const Gallery = () => {
           ¿Estás seguro que quieres borrar la imagen "{deleteImageName}"?
         </h2>
         <div className="gallery-modal-buttons">
-          <button
-            className="gallery-modal-confirm"
-            onClick={deleteImage}
-          >
+          <button className="gallery-modal-confirm" onClick={deleteImage}>
             Continuar
           </button>
-          <button
-            className="gallery-modal-cancel"
-            onClick={() => setConfirmDeleteModalOpen(false)}
-          >
+          <button className="gallery-modal-cancel" onClick={() => setConfirmDeleteModalOpen(false)}>
             Cancelar
           </button>
         </div>
@@ -469,9 +479,7 @@ const Gallery = () => {
         className="gallery-modal-content"
         overlayClassName="gallery-modal-overlay"
       >
-        <h2 className="gallery-modal-title">
-          {archiveModalText}
-        </h2>
+        <h2 className="gallery-modal-title">{archiveModalText}</h2>
         <div className="gallery-modal-buttons">
           <button
             onClick={handleArchiveToggle}
@@ -480,10 +488,7 @@ const Gallery = () => {
           >
             {isArchiving ? "Procesando..." : "Continuar"}
           </button>
-          <button
-            className="gallery-modal-cancel"
-            onClick={() => setConfirmArchiveModalOpen(false)}
-          >
+          <button className="gallery-modal-cancel" onClick={() => setConfirmArchiveModalOpen(false)}>
             Cancelar
           </button>
         </div>
@@ -498,10 +503,7 @@ const Gallery = () => {
         <h2 className="gallery-modal-title">
           Se borró exitosamente la imagen "{deleteImageName}"
         </h2>
-        <button
-          className="gallery-modal-close"
-          onClick={() => setSuccessDeleteModalOpen(false)}
-        >
+        <button className="gallery-modal-close" onClick={() => setSuccessDeleteModalOpen(false)}>
           Cerrar
         </button>
       </Modal>
@@ -512,13 +514,8 @@ const Gallery = () => {
         className="gallery-modal-content"
         overlayClassName="gallery-modal-overlay"
       >
-        <h2 className="gallery-modal-title">
-          {successArchiveText}
-        </h2>
-        <button
-          className="gallery-modal-close"
-          onClick={() => setSuccessArchiveModalOpen(false)}
-        >
+        <h2 className="gallery-modal-title">{successArchiveText}</h2>
+        <button className="gallery-modal-close" onClick={() => setSuccessArchiveModalOpen(false)}>
           Cerrar
         </button>
       </Modal>
@@ -545,9 +542,7 @@ const Gallery = () => {
                 <div className="fullscreen-controls" onClick={(e) => e.stopPropagation()}>
                   <button onClick={(e) => { e.stopPropagation(); zoomIn(); }}>+</button>
                   <button onClick={(e) => { e.stopPropagation(); zoomOut(); }}>-</button>
-                  <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>
-                    Reset
-                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); resetTransform(); }}>Reset</button>
                 </div>
                 <TransformComponent>
                   <img

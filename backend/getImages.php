@@ -85,7 +85,7 @@ if ($withTagsParam === '1') {
     if (!empty($excludeIdsArray)) {
         // Existen exclude_ids
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
                 FROM images i
                 INNER JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -100,7 +100,7 @@ if ($withTagsParam === '1') {
         $stmt->bind_param($types, ...$bindValues);
     } else {
         // Sin exclude_ids
-        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
                 FROM images i
                 INNER JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -117,7 +117,7 @@ if ($withTagsParam === '1') {
     
     if (!empty($excludeIdsArray)) {
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
                 FROM images i
                 LEFT JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -131,7 +131,7 @@ if ($withTagsParam === '1') {
         $bindValues = array_merge([$archivedParam], $excludeIdsArray);
         $stmt->bind_param($types, ...$bindValues);
     } else {
-        $sql = "SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
                 FROM images i
                 LEFT JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -146,7 +146,7 @@ if ($withTagsParam === '1') {
     // --> Lógica vieja: TODAS las imágenes, con archived=? y limit=300
     if (!empty($excludeIdsArray)) {
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-        $sql = "SELECT id, filename, original_name, uploaded_at
+        $sql = "SELECT id, filename, original_name, archived, uploaded_at
                 FROM images
                 WHERE archived = ?
                   AND id NOT IN ($placeholders)
@@ -158,7 +158,7 @@ if ($withTagsParam === '1') {
         $bindValues = array_merge([$archivedParam], $excludeIdsArray);
         $stmt->bind_param($types, ...$bindValues);
     } else {
-        $sql = "SELECT id, filename, original_name, uploaded_at
+        $sql = "SELECT id, filename, original_name, archived, uploaded_at
                 FROM images
                 WHERE archived = ?
                 ORDER BY RAND()
