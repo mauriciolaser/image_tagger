@@ -25,7 +25,7 @@ if ($conn->connect_error) {
 }
 
 // Consulta para obtener todas las imágenes y TODOS los tags asociados a cada imagen,
-// junto con el campo archived (0 o 1)
+// junto con el campo archived y los comentarios asociados
 $sql = "
 SELECT 
     i.id, 
@@ -51,8 +51,8 @@ $result = $stmt->get_result();
 // Abrir la salida (stdout) para escribir el CSV
 $output = fopen('php://output', 'w');
 
-// Escribir la cabecera del CSV
-fputcsv($output, ['ID Imagen', 'Nombre de Imagen', 'Tags', 'Archived']);
+// Escribir la cabecera del CSV (se añadió la columna "Comments")
+fputcsv($output, ['ID Imagen', 'Nombre de Imagen', 'Tags', 'Archived', 'Comments']);
 
 // Recorrer los resultados y escribir cada línea en el CSV
 while ($row = $result->fetch_assoc()) {
@@ -63,7 +63,8 @@ while ($row = $result->fetch_assoc()) {
         $row['id'],
         $row['original_name'],
         $row['tags'],
-        $archivedLabel
+        $archivedLabel,
+        $row['comments']  // Se agrega la columna de comentarios
     ]);
 }
 
