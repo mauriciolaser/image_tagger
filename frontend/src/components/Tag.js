@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
+import CommentSection from './CommentSection';
 import ArchiveButton from "./ArchiveButton";
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import LoadingIcon from './LoadingIcon';
@@ -755,6 +756,9 @@ const Tags = () => {
                 {message && <p className="tag-error-message">{message}</p>}
               </div>
             </div>
+
+                  {/* Agregamos el componente de comentarios */}
+      <CommentSection selectedImage={selectedImage} API_URL={API_URL} />
           </div>
         </div>
       )}

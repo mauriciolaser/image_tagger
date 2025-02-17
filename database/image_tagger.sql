@@ -66,3 +66,15 @@ CREATE TABLE IF NOT EXISTS image_queue (
     job_id INT(11) NOT NULL,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- Crear la tabla de comments con image_id como INT UNSIGNED para que coincida con images.id
+CREATE TABLE comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  image_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
+  comment TEXT NOT NULL,
+  archived TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_image FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

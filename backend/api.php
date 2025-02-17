@@ -52,7 +52,10 @@ $routes = [
     'archiveImage'   => 'archiveImage.php',
     'getTaggedImages'=> 'getTaggedImages.php',
     'getUserCard'    => 'getUserCard.php',
-    'clearDatabase'  => 'clearDatabase.php'
+    'clearDatabase'  => 'clearDatabase.php',
+    'getComments'    => 'handleComments.php',
+    'addComment'     => 'handleComments.php',
+    'archiveComment' => 'handleComments.php'
 ];
 
 // 🆕 Agregar nuevas rutas para importación en batches
