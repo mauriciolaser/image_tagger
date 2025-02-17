@@ -1,4 +1,8 @@
 <?php
+// Desactivar la salida de errores para que no se impriman warnings en la respuesta
+error_reporting(0);
+ini_set('display_errors', 0);
+
 require __DIR__ . '/vendor/autoload.php';
 
 // Cargar variables de entorno desde `.env`
@@ -20,16 +24,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Asegurar que la solicitud sea POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(["success" => false, "message" => "Method not allowed"]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Method not allowed"
+    ]);
     exit;
 }
 
 // Obtener los datos enviados (se asume JSON)
-$data = json_decode(file_get_contents("php://input"), true);
+$input = file_get_contents("php://input");
+$data = json_decode($input, true);
 
 if (!isset($data['image_id'], $data['tag'], $data['user_id'])) {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Parámetros incompletos"]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Parámetros incompletos"
+    ]);
     exit;
 }
 
@@ -39,7 +50,10 @@ $user_id = (int)$data['user_id'];
 
 if (empty($tag_text)) {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "El tag no puede estar vacío"]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "El tag no puede estar vacío"
+    ]);
     exit;
 }
 
@@ -53,7 +67,10 @@ $db_port = $_ENV['DB_PORT'] ?? 3306;
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 if ($conn->connect_error) {
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => "Error de conexión a la base de datos"]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Error de conexión a la base de datos"
+    ]);
     exit;
 }
 
@@ -65,10 +82,12 @@ $userStmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
 $userStmt->bind_param("i", $user_id);
 $userStmt->execute();
 $userResult = $userStmt->get_result();
-
 if ($userResult->num_rows === 0) {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "El usuario no existe."]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "El usuario no existe."
+    ]);
     exit;
 }
 $userStmt->close();
@@ -92,7 +111,10 @@ if ($tagResult->num_rows > 0) {
         $tag_id = $conn->insert_id;
     } else {
         http_response_code(500);
-        echo json_encode(["success" => false, "message" => "Error al insertar el tag"]);
+        echo json_encode([
+            "success" => false, 
+            "message" => "Error al insertar el tag"
+        ]);
         exit;
     }
     $insertTagStmt->close();
@@ -101,7 +123,10 @@ $tagStmt->close();
 
 if (!$tag_id) {
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => "Error al determinar el tag"]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Error al determinar el tag"
+    ]);
     exit;
 }
 
@@ -112,7 +137,10 @@ $checkRelationStmt->execute();
 $relationResult = $checkRelationStmt->get_result();
 
 if ($relationResult->num_rows > 0) {
-    echo json_encode(["success" => false, "message" => "Este tag ya está asignado a esta imagen por este usuario."]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Este tag ya está asignado a esta imagen por este usuario."
+    ]);
     exit;
 }
 $checkRelationStmt->close();
@@ -122,10 +150,16 @@ $insertStmt = $conn->prepare("INSERT INTO image_tags (image_id, tag_id, user_id,
 $insertStmt->bind_param("iii", $image_id, $tag_id, $user_id);
 
 if ($insertStmt->execute()) {
-    echo json_encode(["success" => true, "message" => "Tag agregado exitosamente"]);
+    echo json_encode([
+        "success" => true, 
+        "message" => "Tag agregado exitosamente"
+    ]);
 } else {
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => "Error al asignar el tag a la imagen"]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Error al asignar el tag a la imagen"
+    ]);
 }
 
 $insertStmt->close();

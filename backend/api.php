@@ -1,4 +1,6 @@
 <?php
+ob_start(); // Inicia el buffer de salida
+
 // Configurar headers PRIMERO
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -12,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // 🆕 Capturar action desde query string (para métodos como DELETE)
-$queryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+$queryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '';
 parse_str($queryString, $queryParams);
 $action = $queryParams['action'] ?? '';
 
@@ -60,21 +62,24 @@ $batchImportRoutes = [
     'importStatus'   => 'importStatus.php'
 ];
 
-// Fusionar rutas existentes con nuevas rutas sin mezclar código
 $routes = array_merge($routes, $batchImportRoutes);
 
 // Validar acción
 if (isset($routes[$action])) {
     $filePath = __DIR__ . '/' . $routes[$action];
-
     if (file_exists($filePath)) {
+        ob_clean(); // Limpiar cualquier salida previa antes de incluir el archivo
         require $filePath;
     } else {
+        ob_clean();
         http_response_code(404);
         echo json_encode(["error" => "Archivo no encontrado"]);
     }
 } else {
+    ob_clean();
     http_response_code(400);
     echo json_encode(["error" => "Acción no válida"]);
 }
+
+ob_end_flush(); // Envía la respuesta y finaliza el buffer
 ?>
