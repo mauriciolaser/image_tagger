@@ -31,7 +31,12 @@ SELECT
     i.id, 
     i.original_name, 
     i.archived,
-    IFNULL(GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', '), '') AS tags
+    IFNULL(GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', '), '') AS tags,
+    (
+        SELECT GROUP_CONCAT(CONCAT_WS(': ', c.author, c.comment) SEPARATOR ' | ')
+        FROM comments c
+        WHERE c.image_id = i.id AND c.archived = 0
+    ) AS comments
 FROM images i
 LEFT JOIN image_tags it ON i.id = it.image_id
 LEFT JOIN tags t ON it.tag_id = t.id

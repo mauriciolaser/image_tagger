@@ -54,8 +54,8 @@ switch ($action) {
             ]);
             exit;
         }
-        // Obtener los comentarios que no estén archivados para la imagen especificada
-        $stmt = $conn->prepare("SELECT id, comment, user_id, created_at FROM comments WHERE image_id = ? AND archived = 0 ORDER BY created_at DESC");
+        // Obtener los comentarios que no estén archivados para la imagen especificada, incluyendo el campo author
+        $stmt = $conn->prepare("SELECT id, comment, user_id, author, created_at FROM comments WHERE image_id = ? AND archived = 0 ORDER BY created_at DESC");
         if (!$stmt) {
             echo json_encode(["success" => false, "message" => "Error en la preparación de la consulta: " . $conn->error]);
             exit;
@@ -65,8 +65,8 @@ switch ($action) {
         $result = $stmt->get_result();
         $comments = [];
         while ($row = $result->fetch_assoc()) {
-            // Se puede agregar la lógica para obtener el nombre del autor (si se dispone de una tabla de usuarios)
-            $row['author'] = null; // El cliente puede interpretar un valor nulo como "Anónimo"
+            // Asignar un valor por defecto en caso de que author sea NULL
+            $row['author'] = $row['author'] ?? 'Anónimo';
             $comments[] = $row;
         }
         echo json_encode([
@@ -74,44 +74,43 @@ switch ($action) {
             'comments' => $comments
         ]);
         $stmt->close();
-        break;
+        break;    
 
-    case 'addComment':
-        // Se espera recibir (por POST o JSON): image_id, user_id, comment
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input) {
-            $input = $_POST;
-        }
-        $image_id = $input['image_id'] ?? '';
-        $user_id  = $input['user_id'] ?? '';
-        $comment  = $input['comment'] ?? '';
-        if (empty($image_id) || empty($user_id) || empty($comment)) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Faltan parámetros obligatorios (image_id, user_id o comment).'
-            ]);
-            exit;
-        }
-        // Insertar el nuevo comentario
-        $stmt = $conn->prepare("INSERT INTO comments (image_id, user_id, comment) VALUES (?, ?, ?)");
-        if (!$stmt) {
-            echo json_encode(["success" => false, "message" => "Error en la preparación de la consulta: " . $conn->error]);
-            exit;
-        }
-        $stmt->bind_param("iis", $image_id, $user_id, $comment);
-        if ($stmt->execute()) {
-            echo json_encode([
-                'success'    => true,
-                'comment_id' => $stmt->insert_id
-            ]);
-        } else {
-            echo json_encode([
-                'success' => false,
-                'message' => 'No se pudo agregar el comentario.'
-            ]);
-        }
-        $stmt->close();
-        break;
+        case 'addComment':
+            // Se espera recibir (por POST o JSON): image_id, user_id, comment, author
+            // Utilizamos la variable $input ya obtenida al inicio del script
+            $image_id = $input['image_id'] ?? '';
+            $user_id  = $input['user_id'] ?? '';
+            $comment  = $input['comment'] ?? '';
+            $author   = $input['author'] ?? 'Anónimo';
+        
+            if (empty($image_id) || empty($user_id) || empty($comment)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Faltan parámetros obligatorios (image_id, user_id o comment).'
+                ]);
+                exit;
+            }
+            // Insertar el nuevo comentario
+            $stmt = $conn->prepare("INSERT INTO comments (image_id, user_id, author, comment) VALUES (?, ?, ?, ?)");
+            if (!$stmt) {
+                echo json_encode(["success" => false, "message" => "Error en la preparación de la consulta: " . $conn->error]);
+                exit;
+            }
+            $stmt->bind_param("iiss", $image_id, $user_id, $author, $comment);
+            if ($stmt->execute()) {
+                echo json_encode([
+                    'success'    => true,
+                    'comment_id' => $stmt->insert_id
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No se pudo agregar el comentario.'
+                ]);
+            }
+            $stmt->close();
+            break;        
 
     case 'archiveComment':
         // Se espera recibir (por POST o JSON): comment_id

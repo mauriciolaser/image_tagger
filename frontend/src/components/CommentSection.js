@@ -8,9 +8,14 @@ const CommentSection = ({ selectedImage, API_URL }) => {
   const [commentText, setCommentText] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentSubmitStatus, setCommentSubmitStatus] = useState(null);
+  const [loggedUser, setLoggedUser] = useState('');
 
   // Obtenemos el user_id desde localStorage (o se podría pasar como prop)
   const userId = localStorage.getItem('user_id');
+  useEffect(() => {
+    const storedUser = localStorage.getItem('username');
+    if (storedUser) setLoggedUser(storedUser);
+  }, []);
 
   // Al cambiar la imagen seleccionada, se obtienen sus comentarios
   useEffect(() => {
@@ -47,7 +52,8 @@ const CommentSection = ({ selectedImage, API_URL }) => {
         action: 'addComment',
         image_id: selectedImage.id,
         user_id: userId,
-        comment: commentText.trim()
+        comment: commentText.trim(),
+        author: loggedUser  // Enviar el nombre del usuario como autor
       }, { headers: { 'Content-Type': 'application/json' } });
 
       if (response.data.success) {
