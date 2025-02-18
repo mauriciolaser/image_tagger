@@ -55,7 +55,8 @@ $routes = [
     'clearDatabase'  => 'clearDatabase.php',
     'getComments'    => 'handleComments.php',
     'addComment'     => 'handleComments.php',
-    'archiveComment' => 'handleComments.php'
+    'archiveComment' => 'handleComments.php',
+    'getImageStats'  => 'getImageStats.php'
 ];
 
 // 🆕 Agregar nuevas rutas para importación en batches

@@ -14,7 +14,7 @@ const Tags = () => {
   const [allImages, setAllImages] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const imagesPerPage = 300;
+  const imagesPerPage = 1000;
 
   // "with" usa getTaggedImages; "all" para getImages; "without" para sin tags
   const [filter, setFilter] = useState("with");
@@ -61,6 +61,9 @@ const Tags = () => {
   // Formato: { message: string, type: "success" | "error" | "info" }
   const [tagSubmitStatus, setTagSubmitStatus] = useState(null);
 
+  // Nuevo estado para stats (usando getImageStats.php)
+  const [stats, setStats] = useState(null);
+
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
 
@@ -73,6 +76,25 @@ const Tags = () => {
       console.error('No se pudo obtener el user_id.');
     }
   }, []);
+
+  // Al montar, obtener stats de imágenes (getImageStats.php)
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get(API_URL, { params: { action: 'getImageStats' } });
+        if (response.data && response.data.success) {
+          setStats({
+            total: response.data.total,
+            with_tags: response.data.with_tags,
+            without_tags: response.data.without_tags
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching image stats:", error);
+      }
+    };
+    fetchStats();
+  }, [API_URL]);
 
   // Carga inicial: "Con Tags"
   useEffect(() => {
@@ -544,6 +566,21 @@ const Tags = () => {
           </button>
         </div>
 
+        {/* Renderizado de stats encima de la grilla, según la pestaña */}
+        {!searchMode && stats && (
+          <div className="tag-stats">
+            {filter === "all" && (
+              <p>Mostrando {filteredImages.length} del total de {stats.total} imágenes</p>
+            )}
+            {filter === "with" && (
+              <p>Mostrando {filteredImages.length} del total de {stats.with_tags} imágenes con tags</p>
+            )}
+            {filter === "without" && (
+              <p>Mostrando {filteredImages.length} del total de {stats.without_tags} imágenes sin tags</p>
+            )}
+          </div>
+        )}
+
         {/* Modo Búsqueda */}
         {searchMode && (
           <div style={{ marginBottom: '20px' }}>
@@ -670,24 +707,24 @@ const Tags = () => {
       {selectedImage && (
         <div className="tag-preview-section">
           <div className="tag-preview-container">
-          <h3>Imagen Seleccionada</h3>
-      <p>{selectedImage.original_name || selectedImage.filename}</p>
-      <img
-        src={getImageUrl(selectedImage.filename)}
-        alt={selectedImage.original_name || selectedImage.filename}
-        className="tag-preview-image"
-        onClick={() => setIsFullScreen(true)}
-      />
+            <h3>Imagen Seleccionada</h3>
+            <p>{selectedImage.original_name || selectedImage.filename}</p>
+            <img
+              src={getImageUrl(selectedImage.filename)}
+              alt={selectedImage.original_name || selectedImage.filename}
+              className="tag-preview-image"
+              onClick={() => setIsFullScreen(true)}
+            />
 
-      {/* Contenedor para alinear y espaciar el botón */}
-      <div className="archive-button-container">
-        <ArchiveButton
-          selectedImage={selectedImage}
-          setAllImages={setAllImages}
-          setSelectedImage={setSelectedImage}
-          API_URL={API_URL}
-        />
-      </div>
+            {/* Contenedor para alinear y espaciar el botón */}
+            <div className="archive-button-container">
+              <ArchiveButton
+                selectedImage={selectedImage}
+                setAllImages={setAllImages}
+                setSelectedImage={setSelectedImage}
+                API_URL={API_URL}
+              />
+            </div>
 
             <div className="tag-management">
               <div className="tag-list-container">
@@ -757,8 +794,8 @@ const Tags = () => {
               </div>
             </div>
 
-                  {/* Agregamos el componente de comentarios */}
-      <CommentSection selectedImage={selectedImage} API_URL={API_URL} />
+            {/* Agregamos el componente de comentarios */}
+            <CommentSection selectedImage={selectedImage} API_URL={API_URL} />
           </div>
         </div>
       )}

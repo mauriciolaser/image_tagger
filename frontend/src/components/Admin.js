@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
+import axios from 'axios'; // Asegurarse de importar axios
 
 // Importamos estilos
 import './Admin.css';
@@ -20,6 +21,8 @@ import UserCard from './UserCard';
 
 // Configurar el elemento raíz para React-Modal
 Modal.setAppElement('#root');
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -44,6 +47,9 @@ const Admin = () => {
   const [jobId, setJobId] = useState(null);
   const [importStatus, setImportStatus] = useState('');
 
+  // Estado para stats de imágenes
+  const [imageStats, setImageStats] = useState(null);
+
   // Al montar, leemos username y userId de localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
@@ -51,6 +57,26 @@ const Admin = () => {
 
     const storedUserId = localStorage.getItem('user_id');
     if (storedUserId) setUserId(storedUserId);
+  }, []);
+
+  // Al montar, se hace call a getImageStats
+  useEffect(() => {
+    const fetchImageStats = async () => {
+      try {
+        const response = await axios.get(API_URL, { params: { action: 'getImageStats' } });
+        if (response.data && response.data.success) {
+          setImageStats({
+            total: response.data.total,
+            withoutTags: response.data.without_tags,
+            withTags: response.data.with_tags
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching image stats:", error);
+      }
+    };
+
+    fetchImageStats();
   }, []);
 
   // Monitoreamos la importación en curso (si jobId existe)
@@ -195,7 +221,6 @@ const Admin = () => {
 
   return (
     <div className="admin-container">
-
       <div className="admin-header">
         <h2>Admin</h2>
       </div>
@@ -247,7 +272,7 @@ const Admin = () => {
         </button>
       </div>
 
-      {/* Modal de confirmación para borrar imágenes */}
+      {/* Modales de confirmación y estado */}
       <Modal
         isOpen={deleteModalOpen}
         onRequestClose={() => setDeleteModalOpen(false)}
@@ -268,7 +293,6 @@ const Admin = () => {
         </button>
       </Modal>
 
-      {/* Modal de confirmación para importar imágenes */}
       <Modal
         isOpen={importModalOpen}
         onRequestClose={() => setImportModalOpen(false)}
@@ -289,7 +313,6 @@ const Admin = () => {
         </button>
       </Modal>
 
-      {/* Modal de confirmación para limpiar la DB */}
       <Modal
         isOpen={clearDbModalOpen}
         onRequestClose={() => setClearDbModalOpen(false)}
@@ -312,7 +335,6 @@ const Admin = () => {
         </button>
       </Modal>
 
-      {/* Modal para mostrar mensajes de estado */}
       <Modal
         isOpen={statusModalOpen}
         onRequestClose={() => setStatusModalOpen(false)}
@@ -367,6 +389,16 @@ const Admin = () => {
       {jobId && importStatus === "running" && (
         <div className="import-status-banner">
           <p>Importación en curso...</p>
+        </div>
+      )}
+
+      {/* Renderizado de stats de imágenes debajo de la pantalla */}
+      {imageStats && (
+        <div className="image-stats">
+          <p>Imágenes totales: {imageStats.total}</p>
+          <p>Imágenes sin archivar: {imageStats.total}</p>
+          <p>Imágenes con tags: {imageStats.withTags}</p>
+          <p>Imágenes sin tags: {imageStats.withoutTags}</p>
         </div>
       )}
     </div>

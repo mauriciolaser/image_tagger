@@ -29,7 +29,7 @@ $publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
 $archivedParam = isset($_GET['archived']) ? intval($_GET['archived']) : 0;
 $withTagsParam = isset($_GET['with_tags']) ? $_GET['with_tags'] : null;  // '1', '0', o null
 $pageParam     = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1; // Asegurarnos que sea >= 1
-$limit         = 300;
+$limit         = 1000;
 $offset        = ($pageParam - 1) * $limit;
 
 // Armamos la query base según si queremos solo con tags o sin tags

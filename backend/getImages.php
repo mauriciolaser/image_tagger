@@ -92,7 +92,7 @@ if ($withTagsParam === '1') {
                   AND i.id NOT IN ($placeholders)
                 GROUP BY i.id
                 ORDER BY RAND()
-                LIMIT 300";
+                LIMIT 1000";
         $stmt = $conn->prepare($sql);
         
         $types = 'i' . str_repeat('i', count($excludeIdsArray));
@@ -106,7 +106,7 @@ if ($withTagsParam === '1') {
                 WHERE i.archived = ?
                 GROUP BY i.id
                 ORDER BY RAND()
-                LIMIT 300";
+                LIMIT 1000";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $archivedParam);
     }

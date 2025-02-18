@@ -630,3 +630,10 @@
     flex: 1;
   }
 }
+
+/* ===== Stats ===== */
+.tag-stats {
+  margin-bottom: 15px;
+  font-size: 1.1em;
+  color: #34495e;
+}
