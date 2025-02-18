@@ -58,22 +58,51 @@
     pointer-events: none;
   }
   
-  /* Mensaje de felicitación con animación de crecimiento */
-  .streak-message {
-    margin-top: 10px;
-    font-size: 32px;
-    font-weight: bold;
-    color: #ffdd00;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    animation: growText 1s forwards;
+/* Mensaje de felicitación con animación de crecimiento y cambio de sombra */
+.streak-message {
+  margin-top: 10px;
+  font-size: 32px;
+  font-weight: bold;
+  color: #ffdd00;
+  /* Se define un text-shadow base, que luego animaremos */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  /* Se aplican ambas animaciones: el crecimiento (growText) y el cambio de sombra (changeShadow) */
+  animation: growText 1s forwards, changeShadow 3s infinite;
+}
+
+@keyframes growText {
+  from {
+    transform: scale(1);
   }
-  
+  to {
+    transform: scale(1.8);
+  }
+}
+
   @keyframes growText {
     from {
       transform: scale(1);
     }
     to {
       transform: scale(1.8);
+    }
+  }
+  
+  @keyframes changeShadow {
+    0% {
+      text-shadow: 2px 2px 4px #ff0000; /* rojo */
+    }
+    25% {
+      text-shadow: 2px 2px 4px #ffa500; /* naranja */
+    }
+    50% {
+      text-shadow: 2px 2px 4px #ffff00; /* amarillo */
+    }
+    75% {
+      text-shadow: 2px 2px 4px #008000; /* verde */
+    }
+    100% {
+      text-shadow: 2px 2px 4px #0000ff; /* azul */
     }
   }
   
