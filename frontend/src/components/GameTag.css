@@ -1,0 +1,76 @@
+/* Contador posicionado en la esquina inferior izquierda */
+.game-tag-counter {
+    position: fixed;
+    bottom: 80px; /* Ajusta según la posición de tu modal */
+    left: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 5px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    z-index: 1500;
+  }
+  
+  .game-tag-counter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Overlay para centrar la imagen y el mensaje */
+  .game-tag-streak-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    pointer-events: none;
+  }
+  
+  /* Contenedor para agrupar la imagen y el mensaje */
+  .streak-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* Imagen de streak giratoria */
+  .game-tag-streak-image {
+    width: 200px; /* Ajusta el tamaño según necesites */
+    height: auto;
+    animation: spin 1s linear;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  
+  /* Mensaje de felicitación: crece con animación y se posiciona sobre la imagen */
+  .streak-message {
+    margin-top: 10px;
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffdd00;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    position: relative;
+    z-index: 3000;
+    animation: growText 1s forwards;
+  }
+  
+  @keyframes growText {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.8);
+    }
+  }
+  

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 import CommentSection from './CommentSection';
 import ArchiveButton from "./ArchiveButton";
+import GameTag from './GameTag';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import LoadingIcon from './LoadingIcon';
 import './Tag.css';
@@ -66,6 +67,8 @@ const Tags = () => {
 
   const API_URL = process.env.REACT_APP_API_URL;
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
+
+  const gameTagRef = useRef();
 
   // Al montar, obtener userId
   useEffect(() => {
@@ -291,6 +294,7 @@ const Tags = () => {
     e.preventDefault();
     if (!selectedImage || !tagText.trim() || !userId) return;
     const splittedTags = tagText.split(",").map(t => t.trim()).filter(Boolean);
+    gameTagRef.current && gameTagRef.current.increment();
     if (splittedTags.length === 0) return;
     
     setLoadingTags(true);
@@ -868,6 +872,8 @@ const Tags = () => {
           {tagSubmitStatus.message}
         </div>
       )}
+            <GameTag ref={gameTagRef} />
+
     </div>
   );
 };
