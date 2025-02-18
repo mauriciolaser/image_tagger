@@ -19,6 +19,9 @@ import {
 // Importamos nuestro UserCard
 import UserCard from './UserCard';
 
+// Importamos el componente de estadísticas
+import AdminStats from './AdminStats';
+
 // Configurar el elemento raíz para React-Modal
 Modal.setAppElement('#root');
 
@@ -47,9 +50,6 @@ const Admin = () => {
   const [jobId, setJobId] = useState(null);
   const [importStatus, setImportStatus] = useState('');
 
-  // Estado para stats de imágenes
-  const [imageStats, setImageStats] = useState(null);
-
   // Al montar, leemos username y userId de localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
@@ -59,25 +59,7 @@ const Admin = () => {
     if (storedUserId) setUserId(storedUserId);
   }, []);
 
-  // Al montar, se hace call a getImageStats
-  useEffect(() => {
-    const fetchImageStats = async () => {
-      try {
-        const response = await axios.get(API_URL, { params: { action: 'getImageStats' } });
-        if (response.data && response.data.success) {
-          setImageStats({
-            total: response.data.total,
-            withoutTags: response.data.without_tags,
-            withTags: response.data.with_tags
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching image stats:", error);
-      }
-    };
-
-    fetchImageStats();
-  }, []);
+  // Al montar, se hace call a getImageStats desde AdminStats (ya no desde aquí)
 
   // Monitoreamos la importación en curso (si jobId existe)
   useEffect(() => {
@@ -392,15 +374,8 @@ const Admin = () => {
         </div>
       )}
 
-      {/* Renderizado de stats de imágenes debajo de la pantalla */}
-      {imageStats && (
-        <div className="image-stats">
-          <p>Imágenes totales: {imageStats.total}</p>
-          <p>Imágenes sin archivar: {imageStats.total}</p>
-          <p>Imágenes con tags: {imageStats.withTags}</p>
-          <p>Imágenes sin tags: {imageStats.withoutTags}</p>
-        </div>
-      )}
+      {/* Componente de estadísticas */}
+      <AdminStats />
     </div>
   );
 };

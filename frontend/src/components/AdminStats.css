@@ -1,0 +1,21 @@
+.admin-stats {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 1em;
+    color: #2c3e50;
+  }
+  
+  .admin-stats p {
+    margin: 5px 0;
+  }
+  
+  .admin-stats-loading {
+    font-size: 1.2em;
+    color: #34495e;
+    text-align: center;
+    margin: 20px 0;
+  }
+  
