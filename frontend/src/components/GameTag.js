@@ -46,7 +46,7 @@ const GameTag = forwardRef((props, ref) => {
         <div className="game-tag-streak-overlay">
           <div className="streak-content">
             <img 
-              src="image_tagger/images/streak.png" 
+              src="/image_tagger/images/streak.png" 
               alt="Streak" 
               className="game-tag-streak-image" 
             />
