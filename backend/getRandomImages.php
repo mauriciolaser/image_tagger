@@ -24,9 +24,9 @@ if ($conn->connect_error) {
 
 // Parámetros de paginación:
 // - page: número de página (por defecto 1)
-// - limit: cantidad de imágenes a obtener (por defecto 300; en cargas posteriores se puede usar 500)
+// - limit: cantidad de imágenes a obtener (por defecto 500; en cargas posteriores se puede usar 500)
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 300;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
 $offset = ($page - 1) * $limit;
 
 // Parámetro seed para un orden determinista (si no se envía, se genera uno)

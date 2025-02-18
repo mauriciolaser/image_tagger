@@ -39,7 +39,7 @@ if ($action === 'getImageTags') {
         // Soporte opcional de paginación
         $page = isset($_GET['page']) ? (int)$_GET['page'] : null;
         if ($page) {
-            $limit  = 20; // Imágenes por página
+            $limit  = 500; // Imágenes por página
             $offset = ($page - 1) * $limit;
             $stmt = $pdo->prepare("SELECT id, filename, original_name FROM images WHERE uploaded_by = ? ORDER BY id DESC LIMIT ? OFFSET ?");
             $stmt->bindParam(1, $user_id, PDO::PARAM_INT);

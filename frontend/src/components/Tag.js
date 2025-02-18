@@ -15,7 +15,7 @@ const Tags = () => {
   const [allImages, setAllImages] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const imagesPerPage = 1000;
+  const imagesPerPage = 500;
 
   // "with" usa getTaggedImages; "all" para getImages; "without" para sin tags
   const [filter, setFilter] = useState("with");
@@ -296,10 +296,10 @@ const Tags = () => {
     const splittedTags = tagText.split(",").map(t => t.trim()).filter(Boolean);
     gameTagRef.current && gameTagRef.current.increment();
     if (splittedTags.length === 0) return;
-    
+
     setLoadingTags(true);
     setTagSubmitStatus({ message: "Agregando tags...", type: "info" });
-    
+
     try {
       const responses = await Promise.all(
         splittedTags.map(singleTag =>
@@ -313,27 +313,27 @@ const Tags = () => {
             },
             { headers: { "Content-Type": "application/json" } }
           )
-          .then(res => ({ data: parseResponseData(res) }))
-          .catch(error => {
-            console.error(`Error agregando el tag "${singleTag}":`, error);
-            return { data: { success: false } };
-          })
+            .then(res => ({ data: parseResponseData(res) }))
+            .catch(error => {
+              console.error(`Error agregando el tag "${singleTag}":`, error);
+              return { data: { success: false } };
+            })
         )
       );
-      
+
       const successCount = responses.filter(
         res => res && res.data && (res.data.success == true || res.data.success == 1)
       ).length;
-      
+
       if (successCount > 0) {
         setTagSubmitStatus({ message: `Se agregaron ${successCount} tag(s) correctamente.`, type: "success" });
       } else {
         setModalMessage("No se pudo agregar ningún tag.");
         setModalOpen(true);
       }
-      
+
       setTagText('');
-      
+
       await Promise.all([
         fetchImageTags(selectedImage.id),
         fetchAllTagsForGrid([selectedImage.id])
@@ -872,7 +872,7 @@ const Tags = () => {
           {tagSubmitStatus.message}
         </div>
       )}
-            <GameTag ref={gameTagRef} />
+      <GameTag ref={gameTagRef} />
 
     </div>
   );

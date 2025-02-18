@@ -20,25 +20,20 @@
     transform: translateY(0);
   }
   
-  /* Overlay para centrar la imagen y el mensaje */
+  /* Overlay que cubre toda la página */
   .game-tag-streak-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     z-index: 2000;
     pointer-events: none;
   }
   
-  /* Contenedor para agrupar la imagen y el mensaje */
-  .streak-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  /* Contenedor para la imagen que se mueve */
+  .streak-image-container {
+    /* Puedes agregar estilos adicionales si es necesario */
   }
   
   /* Imagen de streak giratoria */
@@ -53,15 +48,23 @@
     to   { transform: rotate(360deg); }
   }
   
-  /* Mensaje de felicitación: crece con animación y se posiciona sobre la imagen */
+  /* Contenedor para el mensaje fijo */
+  .streak-message-container {
+    position: fixed;
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3000;
+    pointer-events: none;
+  }
+  
+  /* Mensaje de felicitación con animación de crecimiento */
   .streak-message {
     margin-top: 10px;
     font-size: 32px;
     font-weight: bold;
     color: #ffdd00;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    position: relative;
-    z-index: 3000;
     animation: growText 1s forwards;
   }
   

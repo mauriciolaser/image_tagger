@@ -92,7 +92,7 @@ if ($withTagsParam === '1') {
                   AND i.id NOT IN ($placeholders)
                 GROUP BY i.id
                 ORDER BY RAND()
-                LIMIT 1000";
+                LIMIT 500";
         $stmt = $conn->prepare($sql);
         
         $types = 'i' . str_repeat('i', count($excludeIdsArray));
@@ -106,7 +106,7 @@ if ($withTagsParam === '1') {
                 WHERE i.archived = ?
                 GROUP BY i.id
                 ORDER BY RAND()
-                LIMIT 1000";
+                LIMIT 500";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $archivedParam);
     }
@@ -124,7 +124,7 @@ if ($withTagsParam === '1') {
                   AND i.id NOT IN ($placeholders)
                   AND it.image_id IS NULL
                 ORDER BY RAND()
-                LIMIT 1000";
+                LIMIT 500";
         $stmt = $conn->prepare($sql);
         
         $types = 'i' . str_repeat('i', count($excludeIdsArray));
@@ -137,13 +137,13 @@ if ($withTagsParam === '1') {
                 WHERE i.archived = ?
                   AND it.image_id IS NULL
                 ORDER BY RAND()
-                LIMIT 1000";
+                LIMIT 500";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $archivedParam);
     }
 
 } else {
-    // --> Lógica vieja: TODAS las imágenes, con archived=? y limit=300
+    // --> Lógica vieja: TODAS las imágenes, con archived=? y limit=500
     if (!empty($excludeIdsArray)) {
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
         $sql = "SELECT id, filename, original_name, archived, uploaded_at
@@ -151,7 +151,7 @@ if ($withTagsParam === '1') {
                 WHERE archived = ?
                   AND id NOT IN ($placeholders)
                 ORDER BY RAND()
-                LIMIT 1000";
+                LIMIT 500";
         $stmt = $conn->prepare($sql);
         
         $types = 'i' . str_repeat('i', count($excludeIdsArray));
@@ -162,7 +162,7 @@ if ($withTagsParam === '1') {
                 FROM images
                 WHERE archived = ?
                 ORDER BY RAND()
-                LIMIT 1000";
+                LIMIT 500";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $archivedParam);
     }
