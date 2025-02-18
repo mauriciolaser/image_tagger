@@ -124,7 +124,7 @@ if ($withTagsParam === '1') {
                   AND i.id NOT IN ($placeholders)
                   AND it.image_id IS NULL
                 ORDER BY RAND()
-                LIMIT 300";
+                LIMIT 1000";
         $stmt = $conn->prepare($sql);
         
         $types = 'i' . str_repeat('i', count($excludeIdsArray));
@@ -137,7 +137,7 @@ if ($withTagsParam === '1') {
                 WHERE i.archived = ?
                   AND it.image_id IS NULL
                 ORDER BY RAND()
-                LIMIT 300";
+                LIMIT 1000";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $archivedParam);
     }
@@ -151,7 +151,7 @@ if ($withTagsParam === '1') {
                 WHERE archived = ?
                   AND id NOT IN ($placeholders)
                 ORDER BY RAND()
-                LIMIT 300";
+                LIMIT 1000";
         $stmt = $conn->prepare($sql);
         
         $types = 'i' . str_repeat('i', count($excludeIdsArray));
@@ -162,7 +162,7 @@ if ($withTagsParam === '1') {
                 FROM images
                 WHERE archived = ?
                 ORDER BY RAND()
-                LIMIT 300";
+                LIMIT 1000";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $archivedParam);
     }

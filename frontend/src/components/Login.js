@@ -40,7 +40,7 @@ const Login = () => {
 
             console.log("✅ User ID guardado en localStorage:", response.data.user.user_id);
 
-            navigate('/gallery');
+            navigate('/tag');
         } else {
             alert(response.data.message || 'Invalid credentials');
         }
