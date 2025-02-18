@@ -1,63 +1,63 @@
 /* Contador posicionado en la esquina inferior izquierda */
 .game-tag-counter {
-    position: fixed;
-    bottom: 80px; /* Ajusta según la posición de tu modal */
-    left: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #fff;
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 10px 15px;
-    border-radius: 5px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    z-index: 1500;
-  }
-  
-  .game-tag-counter.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  /* Overlay que cubre toda la página */
-  .game-tag-streak-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2000;
-    pointer-events: none;
-  }
-  
-  /* Contenedor para la imagen que se mueve */
-  .streak-image-container {
-    /* Puedes agregar estilos adicionales si es necesario */
-  }
-  
-  /* Imagen de streak giratoria */
-  .game-tag-streak-image {
-    width: 200px; /* Ajusta el tamaño según necesites */
-    height: auto;
-    animation: spin 1s linear;
-  }
-  
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-  }
-  
-  /* Contenedor para el mensaje fijo */
-  .streak-message-container {
-    position: fixed;
-    top: 50%; 
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 3000;
-    pointer-events: none;
-  }
-  
+  position: fixed;
+  bottom: 120px; /* Ajusta según la posición de tu modal */
+  left: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 10px 15px;
+  border-radius: 5px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  z-index: 1500;
+}
+
+.game-tag-counter.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Overlay que cubre toda la página */
+.game-tag-streak-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+/* Contenedor para la imagen que se mueve */
+.streak-image-container {
+  /* Puedes agregar estilos adicionales si es necesario */
+}
+
+/* Imagen de streak giratoria */
+.game-tag-streak-image {
+  width: 200px; /* Ajusta el tamaño según necesites */
+  height: auto;
+  animation: spin 1s linear;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Contenedor para el mensaje fijo */
+.streak-message-container {
+  position: fixed;
+  top: 50%; 
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3000;
+  pointer-events: none;
+}
+
 /* Mensaje de felicitación con animación de crecimiento y cambio de sombra */
 .streak-message {
   margin-top: 10px;
@@ -72,37 +72,84 @@
 
 @keyframes growText {
   from {
-    transform: scale(1);
+      transform: scale(1);
   }
   to {
-    transform: scale(1.8);
+      transform: scale(1.8);
   }
 }
 
-  @keyframes growText {
-    from {
+@keyframes growText {
+  from {
       transform: scale(1);
-    }
-    to {
+  }
+  to {
       transform: scale(1.8);
-    }
   }
-  
-  @keyframes changeShadow {
-    0% {
+}
+
+@keyframes changeShadow {
+  0% {
       text-shadow: 2px 2px 4px #ff0000; /* rojo */
-    }
-    25% {
-      text-shadow: 2px 2px 4px #ffa500; /* naranja */
-    }
-    50% {
-      text-shadow: 2px 2px 4px #ffff00; /* amarillo */
-    }
-    75% {
-      text-shadow: 2px 2px 4px #008000; /* verde */
-    }
-    100% {
-      text-shadow: 2px 2px 4px #0000ff; /* azul */
-    }
   }
-  
+  25% {
+      text-shadow: 2px 2px 4px #ffa500; /* naranja */
+  }
+  50% {
+      text-shadow: 2px 2px 4px #ffff00; /* amarillo */
+  }
+  75% {
+      text-shadow: 2px 2px 4px #008000; /* verde */
+  }
+  100% {
+      text-shadow: 2px 2px 4px #0000ff; /* azul */
+  }
+}
+
+/* Barra de progreso del streak, ubicada abajo a la izquierda en desktop */
+.streak-progress-container {
+  position: fixed;
+  bottom: 80px;
+  left: 20px;
+  z-index: 3000;
+}
+
+.streak-progress-bar-container {
+  position: relative;
+  width: 300px; /* Ancho fijo */
+  height: 30px; /* Alto fijo */
+  background: #ddd;
+  border: 2px solid #aaa;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.streak-progress-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  background: #76c7c0;
+  transition: width 0.1s linear;
+}
+
+.streak-progress-number {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  z-index: 10;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 768px) {
+  /* En móvil, la barra de progreso se posiciona en la parte superior */
+  .streak-progress-container {
+    top: 20px;
+    bottom: auto;
+    left: 20px;
+  }
+}

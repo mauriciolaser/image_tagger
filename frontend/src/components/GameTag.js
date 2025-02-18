@@ -10,6 +10,29 @@ const GameTag = forwardRef((props, ref) => {
   // Estado para la posición de la imagen streak (inicialmente centrada)
   const [position, setPosition] = useState({ left: '50vw', top: '50vh' });
 
+  // Estados para la barra de progreso del streak
+  const [streak, setStreak] = useState(0);
+  const [streakTime, setStreakTime] = useState(60); // tiempo en segundos
+  const streakIntervalRef = useRef(null);
+
+  const resetStreakTimer = () => {
+    if (streakIntervalRef.current) {
+      clearInterval(streakIntervalRef.current);
+    }
+    setStreakTime(60);
+    streakIntervalRef.current = setInterval(() => {
+      setStreakTime(prevTime => {
+        if (prevTime <= 0.1) {
+          clearInterval(streakIntervalRef.current);
+          streakIntervalRef.current = null;
+          setStreak(0); // Reinicia el streak al expirar el tiempo
+          return 60;
+        }
+        return prevTime - 0.1;
+      });
+    }, 100);
+  };
+
   useImperativeHandle(ref, () => ({
     increment: () => {
       setCount(prevCount => {
@@ -24,7 +47,7 @@ const GameTag = forwardRef((props, ref) => {
           setVisible(false);
         }, 1000);
 
-        // Cada 10 tags, mostrar el overlay de streak
+        // Cada 10 tags, mostrar el overlay de streak (imagen y mensaje)
         if (newCount % 10 === 0) {
           setShowStreak(true);
           // Se mantiene visible el overlay durante 5 segundos
@@ -36,9 +59,19 @@ const GameTag = forwardRef((props, ref) => {
         }
         return newCount;
       });
+
+      // Incrementar streak y reiniciar el timer
+      setStreak(prev => prev + 1);
+      resetStreakTimer();
     },
     reset: () => {
       setCount(0);
+      setStreak(0);
+      setStreakTime(60);
+      if (streakIntervalRef.current) {
+        clearInterval(streakIntervalRef.current);
+        streakIntervalRef.current = null;
+      }
     }
   }));
 
@@ -65,12 +98,33 @@ const GameTag = forwardRef((props, ref) => {
     }
   }, [showStreak]);
 
+  // Limpieza de intervalos al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (streakIntervalRef.current) clearInterval(streakIntervalRef.current);
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
+
   return (
     <>
       {/* Contador en la esquina inferior izquierda */}
       <div className={`game-tag-counter ${visible ? 'visible' : ''}`}>
         x{count}
       </div>
+
+      {/* Barra de progreso del streak */}
+      {streak > 0 && (
+        <div className="streak-progress-container">
+          <div className="streak-progress-bar-container">
+            <div 
+              className="streak-progress-bar"
+              style={{ width: `${(streakTime / 60) * 100}%` }}
+            ></div>
+            <div className="streak-progress-number">{streak}</div>
+          </div>
+        </div>
+      )}
 
       {/* Overlay de streak: la imagen se mueve y el mensaje permanece fijo */}
       {showStreak && (
