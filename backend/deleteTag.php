@@ -73,10 +73,10 @@ if ($conn->connect_error) {
 $conn->begin_transaction();
 
 try {
-    // 1. Eliminar de image_tags
-    $stmt = $conn->prepare("DELETE FROM image_tags WHERE image_id = ? AND tag_id = ? AND user_id = ?");
-    $stmt->bind_param("iii", $image_id, $tag_id, $user_id);
-    $stmt->execute();
+// 1. Eliminar de image_tags (permitiendo que cualquier usuario borre el tag)
+$stmt = $conn->prepare("DELETE FROM image_tags WHERE image_id = ? AND tag_id = ?");
+$stmt->bind_param("ii", $image_id, $tag_id);
+$stmt->execute();
     
     if ($stmt->affected_rows === 0) {
         throw new Exception("No se encontró el tag asignado");

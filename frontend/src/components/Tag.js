@@ -4,6 +4,7 @@ import Modal from 'react-modal';
 import CommentSection from './CommentSection';
 import ArchiveButton from "./ArchiveButton";
 import GameTag from './GameTag';
+import RefreshTag from './RefreshTag';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import LoadingIcon from './LoadingIcon';
 import './Tag.css';
@@ -737,13 +738,21 @@ const Tags = () => {
 
             {/* Contenedor para alinear y espaciar el botón */}
             <div className="archive-button-container">
-              <ArchiveButton
-                selectedImage={selectedImage}
-                setAllImages={setAllImages}
-                setSelectedImage={setSelectedImage}
-                API_URL={API_URL}
-              />
-            </div>
+  <ArchiveButton
+    selectedImage={selectedImage}
+    setAllImages={setAllImages}
+    setSelectedImage={setSelectedImage}
+    API_URL={API_URL}
+  />
+  <RefreshTag 
+    onRefresh={() => {
+      // Se refrescan tanto los tags propios como los de otros
+      fetchImageTags(selectedImage.id);
+      fetchOtherImageTags(selectedImage.id);
+    }}
+    loading={loadingTags}
+  />
+</div>           
 
             <div className="tag-management">
               <div className="tag-list-container">
@@ -784,11 +793,17 @@ const Tags = () => {
                       <p className="tag-empty-message">Cargando tags...</p>
                     ) : selectedImageOtherTags.length > 0 ? (
                       <ul className="tag-list">
-                        {selectedImageOtherTags.map((tag) => (
-                          <li key={tag.id} className="tag-list-item">
-                            <span>{tag.name}</span>
-                          </li>
-                        ))}
+{selectedImageOtherTags.map((tag) => (
+  <li key={tag.id} className="tag-list-item">
+    <span>{tag.name}</span>
+    <button 
+      className="tag-delete-button" 
+      onClick={() => handleTagDelete(tag.id, tag.name)}
+    >
+      ✕
+    </button>
+  </li>
+))}
                       </ul>
                     ) : (
                       <p className="tag-empty-message">No hay tags de otros usuarios.</p>
