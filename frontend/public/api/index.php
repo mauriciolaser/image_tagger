@@ -1,8 +1,10 @@
 <?php
 // Cargar Composer y PHP dotenv desde el backend
+// En este caso, está bajando 3 niveles /public_html/image_tagger/api/ y luego entrando a root/image_tagger/vendor/autoload.php
 require __DIR__ . '/../../../image_tagger/vendor/autoload.php';
 
-// Cargar variables de entorno
+// Cargar variables de entorno. Esto depende de la estructura del servidor Apache. 
+// En este caso, está bajando 3 niveles /public_html/image_tagger/api/ y luego entrando a root/image_tagger
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../image_tagger');
 $dotenv->load();
 

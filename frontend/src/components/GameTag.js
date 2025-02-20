@@ -26,6 +26,7 @@ const GameTag = forwardRef((props, ref) => {
           clearInterval(streakIntervalRef.current);
           streakIntervalRef.current = null;
           setStreak(0); // Reinicia el streak al expirar el tiempo
+          setCount(0);
           return 60;
         }
         return prevTime - 0.1;

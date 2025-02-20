@@ -13,6 +13,7 @@ error_log("PROFILE_PICS_DIR: " . $_ENV['PROFILE_PICS_DIR']);
 $env = getenv('APP_ENV') ?: 'development';
 
 // Definir la ruta correcta de `vendor/autoload.php`
+// En este caso, está bajando 1 nivel, pero en producción suele bajar 3 niveles /public_html/image_tagger/api/ y luego entrando a root/image_tagger/vendor/autoload.php
 require __DIR__ . '/../vendor/autoload.php';
 $dotenvPath = __DIR__;
 
