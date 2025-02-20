@@ -1,0 +1,68 @@
+/* src/components/TagInfo.css */
+.tag-info-container {
+  margin: 20px;
+  padding: 10px;
+}
+
+.tag-info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tag-info-table th,
+.tag-info-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  vertical-align: middle; /* Centra verticalmente los valores */
+}
+
+/* Estilo para la fila de encabezado */
+.tag-info-table thead th {
+  background-color: #000;
+  color: #fff;
+  text-align: left;
+}
+
+/* Alternar colores en las filas para facilitar la lectura */
+.tag-info-table tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.tag-info-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Estilos para dispositivos móviles */
+@media screen and (max-width: 600px) {
+  .tag-info-table thead {
+    display: none;
+  }
+
+  .tag-info-table,
+  .tag-info-table tbody,
+  .tag-info-table tr,
+  .tag-info-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .tag-info-table tr {
+    margin-bottom: 15px;
+  }
+
+  .tag-info-table td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+
+  .tag-info-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 45%;
+    padding-left: 15px;
+    font-weight: bold;
+    text-align: left;
+  }
+}

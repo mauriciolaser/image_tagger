@@ -46,6 +46,7 @@ $routes = [
     'getImageTags'   => 'getImageTags.php',
     'getUserId'      => 'getUserId.php',
     'getAllTags'     => 'getAllTags.php',
+    'getTagList'     => 'getTagList.php',
     'importImages'   => 'importImages.php',
     'tagImage'       => 'tagImage.php',
     'getRandomImages'=> 'getRandomImages.php',
