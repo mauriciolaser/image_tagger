@@ -1,5 +1,5 @@
 // src/components/TagInfo.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './TagInfo.css';
@@ -10,6 +10,8 @@ const TagInfo = () => {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Estado para controlar la columna y dirección de ordenamiento
+  const [sortConfig, setSortConfig] = useState({ key: 'tag_name', direction: 'asc' });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,9 +19,8 @@ const TagInfo = () => {
       try {
         const res = await axios.get(API_URL, { params: { action: 'getTagList' } });
         if (res.data && res.data.success) {
-          // Ordenar alfabéticamente por el nombre del tag
-          const sortedTags = res.data.tags.sort((a, b) => a.tag_name.localeCompare(b.tag_name));
-          setTags(sortedTags);
+          // Se guarda la data sin ordenar, ya que el ordenamiento se manejará con sortConfig
+          setTags(res.data.tags);
         } else {
           setError('Error al obtener los tags');
         }
@@ -34,8 +35,36 @@ const TagInfo = () => {
     fetchTags();
   }, []);
 
+  // Función para manejar el cambio de ordenamiento
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Se utiliza useMemo para memorizar el array ordenado
+  const sortedTags = useMemo(() => {
+    if (!tags) return [];
+    let sortableTags = [...tags];
+    if (sortConfig.key === 'tag_name') {
+      sortableTags.sort((a, b) =>
+        sortConfig.direction === 'asc'
+          ? a.tag_name.localeCompare(b.tag_name)
+          : b.tag_name.localeCompare(a.tag_name)
+      );
+    } else if (sortConfig.key === 'frequency') {
+      sortableTags.sort((a, b) =>
+        sortConfig.direction === 'asc'
+          ? a.frequency - b.frequency
+          : b.frequency - a.frequency
+      );
+    }
+    return sortableTags;
+  }, [tags, sortConfig]);
+
   const handleTagClick = (tagName) => {
-    // Navega a TagPage pasando por query string el modo "with" y el tag seleccionado.
     navigate(`/tag?mode=with&selectedTag=${encodeURIComponent(tagName)}`);
   };
 
@@ -53,12 +82,16 @@ const TagInfo = () => {
       <table className="tag-info-table">
         <thead>
           <tr>
-            <th>Tag</th>
-            <th>Frecuencia</th>
+            <th onClick={() => handleSort('tag_name')} style={{ cursor: 'pointer' }}>
+              Tag {sortConfig.key === 'tag_name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th onClick={() => handleSort('frequency')} style={{ cursor: 'pointer' }}>
+              Frecuencia {sortConfig.key === 'frequency' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
           </tr>
         </thead>
         <tbody>
-          {tags.map((tag, index) => (
+          {sortedTags.map((tag, index) => (
             <tr
               key={index}
               onClick={() => handleTagClick(tag.tag_name)}
