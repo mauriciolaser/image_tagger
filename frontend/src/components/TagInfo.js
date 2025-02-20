@@ -1,6 +1,7 @@
 // src/components/TagInfo.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './TagInfo.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -9,6 +10,7 @@ const TagInfo = () => {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -16,9 +18,7 @@ const TagInfo = () => {
         const res = await axios.get(API_URL, { params: { action: 'getTagList' } });
         if (res.data && res.data.success) {
           // Ordenar alfabéticamente por el nombre del tag
-          const sortedTags = res.data.tags.sort((a, b) =>
-            a.tag_name.localeCompare(b.tag_name)
-          );
+          const sortedTags = res.data.tags.sort((a, b) => a.tag_name.localeCompare(b.tag_name));
           setTags(sortedTags);
         } else {
           setError('Error al obtener los tags');
@@ -33,6 +33,11 @@ const TagInfo = () => {
 
     fetchTags();
   }, []);
+
+  const handleTagClick = (tagName) => {
+    // Navega a TagPage pasando por query string el modo "with" y el tag seleccionado.
+    navigate(`/tag?mode=with&selectedTag=${encodeURIComponent(tagName)}`);
+  };
 
   if (loading) {
     return <div className="tag-info-container">Cargando tags...</div>;
@@ -54,7 +59,11 @@ const TagInfo = () => {
         </thead>
         <tbody>
           {tags.map((tag, index) => (
-            <tr key={index}>
+            <tr
+              key={index}
+              onClick={() => handleTagClick(tag.tag_name)}
+              style={{ cursor: 'pointer' }}
+            >
               <td data-label="Tag">{tag.tag_name}</td>
               <td data-label="Frecuencia">{tag.frequency}</td>
             </tr>

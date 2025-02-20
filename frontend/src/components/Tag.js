@@ -7,6 +7,8 @@ import GameTag from './GameTag';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import LoadingIcon from './LoadingIcon';
 import './Tag.css';
+// MODIFICACIÓN: Importar useLocation
+import { useLocation } from 'react-router-dom';
 
 Modal.setAppElement('#root');
 
@@ -69,6 +71,8 @@ const Tags = () => {
   const IMAGE_URL = process.env.REACT_APP_IMAGE_URL;
 
   const gameTagRef = useRef();
+  // MODIFICACIÓN: Usar useLocation para leer parámetros de la URL
+  const location = useLocation();
 
   // Al montar, obtener userId
   useEffect(() => {
@@ -79,6 +83,17 @@ const Tags = () => {
       console.error('No se pudo obtener el user_id.');
     }
   }, []);
+
+  // MODIFICACIÓN: Leer parámetros de la URL y actualizar filtro y tags incluidos si se encuentra mode=with y selectedTag
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const modeParam = queryParams.get('mode');
+    const selectedTag = queryParams.get('selectedTag');
+    if (modeParam === 'with' && selectedTag) {
+      setFilter('with');
+      setIncludedTags(prev => prev.includes(selectedTag) ? prev : [...prev, selectedTag]);
+    }
+  }, [location]);
 
   // Al montar, obtener stats de imágenes (getImageStats.php)
   useEffect(() => {
