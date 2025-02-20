@@ -2,17 +2,19 @@
 .tag-info-container {
   margin: 20px;
   padding: 10px;
+  overflow-x: auto; /* Permite el scroll horizontal si la tabla es más ancha */
 }
 
 .tag-info-table {
   width: 100%;
+  min-width: 300px; /* Se asegura un ancho mínimo para que se vea la flecha */
   border-collapse: collapse;
 }
 
 .tag-info-table th,
 .tag-info-table td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 8px 12px; /* Aumentamos el padding para darle más espacio al contenido */
   vertical-align: middle; /* Centra verticalmente los valores */
 }
 

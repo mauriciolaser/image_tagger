@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
 import TagInfo from './TagInfo';
+import TagChart from './TagChart';
 import axios from 'axios'; // Asegurarse de importar axios
 
 // Importamos estilos
@@ -379,6 +380,9 @@ const Admin = () => {
       <AdminStats />
       {/* Componente de lista de Tags*/}
       <TagInfo />
+
+      {/* Componente de chart de Tags*/}
+      <TagChart />
 
     </div>
   );
