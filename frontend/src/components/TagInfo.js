@@ -65,7 +65,8 @@ const TagInfo = () => {
   }, [tags, sortConfig]);
 
   const handleTagClick = (tagName) => {
-    navigate(`/tag?mode=with&selectedTag=${encodeURIComponent(tagName)}`);
+    const url = `/image_tagger/tag?mode=with&selectedTag=${encodeURIComponent(tagName)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   if (loading) {
