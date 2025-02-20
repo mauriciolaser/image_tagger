@@ -115,3 +115,20 @@
   margin-top: 10px;
   border-radius: 4px;
 }
+
+/* Contenedor para TagInfo y TagChart */
+.tag-components-container {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  width: 100%;
+  justify-content: center;
+  margin: 10px auto;
+}
+
+/* En mobile, se apilan uno sobre otro */
+@media screen and (max-width: 600px) {
+  .tag-components-container {
+    flex-direction: column;
+  }
+}

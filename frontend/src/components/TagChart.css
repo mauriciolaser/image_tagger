@@ -1,7 +1,14 @@
 /* src/components/TagChart.css */
-.tag-chart-container {
+
+/* ========== ESTILOS PARA DESKTOP (pantallas ≥ 601px) ========== */
+@media screen and (min-width: 601px) {
+  .tag-chart-container {
     margin: 20px;
     padding: 10px;
+    /* Se muestra con un ancho mínimo para desktop */
+    min-width: 900px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   
   .tag-input-section {
@@ -44,6 +51,8 @@
     margin: 5px 5px 0 0;
     border-radius: 4px;
     font-size: 14px;
+    /* En desktop se mantiene en línea */
+    white-space: nowrap;
   }
   
   .btn-remove {
@@ -65,7 +74,8 @@
   
   .chart-container {
     width: 100%;
-    overflow-x: auto;
+    overflow-x: auto; /* Permite scroll horizontal si es necesario */
+    box-sizing: border-box;
   }
   
   .loading, .error {
@@ -73,16 +83,81 @@
     margin: 10px 0;
     font-size: 16px;
   }
-  
-  /* Responsividad para pantallas pequeñas */
-  @media screen and (max-width: 600px) {
-    .tag-input-section {
-      flex-direction: column;
-    }
-  
-    .tag-input-section input[type="text"],
-    .btn-add {
-      width: 100%;
-    }
+}
+
+/* ========== ESTILOS PARA MOBILE (pantallas ≤ 600px) ========== */
+@media screen and (max-width: 600px) {
+  .tag-chart-container {
+    margin: 10px auto;
+    padding: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    /* Se eliminan las restricciones de altura para que el contenido pueda expandirse
+       y la página se scrollee normalmente */
+    /* max-height: 80vh;
+       overflow-y: auto; */
   }
   
+  .tag-input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .tag-input-section input[type="text"],
+  .btn-add {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Los tags se envuelven en varias líneas */
+  .selected-tags {
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .tag-item {
+    display: inline-block;
+    background-color: #e0e0e0;
+    padding: 5px 10px;
+    margin: 5px 0;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: normal; /* Permite wrap */
+    max-width: 100%;
+    word-break: break-word;
+  }
+  
+  .btn-remove {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    margin-left: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-remove:hover {
+    background-color: #c82333;
+  }
+  
+  .chart-container {
+    width: 100%;
+    overflow-x: auto; /* Permite scroll horizontal en el chart */
+    box-sizing: border-box;
+  }
+  
+  .loading, .error {
+    text-align: center;
+    margin: 10px 0;
+    font-size: 16px;
+  }
+}

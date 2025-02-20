@@ -378,11 +378,11 @@ const Admin = () => {
 
       {/* Componente de estadísticas */}
       <AdminStats />
-      {/* Componente de lista de Tags*/}
-      <TagInfo />
-
-      {/* Componente de chart de Tags*/}
-      <TagChart />
+      
+      <div className="tag-components-container">
+        <TagInfo />
+        <TagChart />
+      </div>
 
     </div>
   );
