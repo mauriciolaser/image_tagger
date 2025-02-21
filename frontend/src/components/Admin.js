@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
 import TagInfo from './TagInfo';
 import TagChart from './TagChart';
-import axios from 'axios'; // Asegurarse de importar axios
+import UpdateTag from './UpdateTag';
+import axios from 'axios';
 
 // Importamos estilos
 import './Admin.css';
@@ -24,7 +25,6 @@ import UserCard from './UserCard';
 // Importamos el componente de estadísticas
 import AdminStats from './AdminStats';
 
-// Configurar el elemento raíz para React-Modal
 Modal.setAppElement('#root');
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -52,6 +52,9 @@ const Admin = () => {
   const [jobId, setJobId] = useState(null);
   const [importStatus, setImportStatus] = useState('');
 
+  // Estado para refrescar la lista de tags
+  const [tagRefreshFlag, setTagRefreshFlag] = useState(false);
+
   // Al montar, leemos username y userId de localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
@@ -60,8 +63,6 @@ const Admin = () => {
     const storedUserId = localStorage.getItem('user_id');
     if (storedUserId) setUserId(storedUserId);
   }, []);
-
-  // Al montar, se hace call a getImageStats desde AdminStats (ya no desde aquí)
 
   // Monitoreamos la importación en curso (si jobId existe)
   useEffect(() => {
@@ -89,7 +90,10 @@ const Admin = () => {
     return () => clearInterval(interval);
   }, [jobId]);
 
-  // Manejo de botones:
+  // Función para refrescar la lista de tags (toggle)
+  const handleTagsUpdate = () => {
+    setTagRefreshFlag(prev => !prev);
+  };
 
   // Botón "Borrar todas las imágenes" (Nuke database)
   const handleDeleteAllImages = async () => {
@@ -118,7 +122,6 @@ const Admin = () => {
       setStatusModalOpen(true);
       return;
     }
-    // Abre en otra pestaña
     window.open(
       `${process.env.REACT_APP_API_URL}?action=exportImages&user_id=${userId}`,
       '_blank'
@@ -133,7 +136,6 @@ const Admin = () => {
       setStatusModalOpen(true);
       return;
     }
-
     try {
       setImportLoading(true);
       const response = await startImport(userId);
@@ -209,7 +211,6 @@ const Admin = () => {
         <h2>Admin</h2>
       </div>
 
-      {/* Tarjeta de usuario (foto y nombre) */}
       <UserCard userId={userId} username={loggedUser} />
 
       <div className="admin-buttons">
@@ -222,7 +223,6 @@ const Admin = () => {
             {deleteLoading ? "Borrando..." : "Nuke database ☢️"}
           </button>
         )}
-
         <button
           onClick={handleExport}
           disabled={deleteLoading || importLoading}
@@ -230,7 +230,6 @@ const Admin = () => {
         >
           Exportar
         </button>
-
         {loggedUser === 'admin' && (
           <button
             onClick={() => setImportModalOpen(true)}
@@ -240,7 +239,6 @@ const Admin = () => {
             {importLoading ? "Importando..." : "Importar imágenes"}
           </button>
         )}
-
         {loggedUser === 'admin' && (
           <button
             onClick={() => setClearDbModalOpen(true)}
@@ -250,7 +248,6 @@ const Admin = () => {
             {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
           </button>
         )}
-
         <button onClick={handleLogout} className="logout-button">
           Cerrar sesión
         </button>
@@ -263,16 +260,10 @@ const Admin = () => {
         className="admin-modal"
       >
         <h2>¿Borrar todas las imágenes?</h2>
-        <button
-          onClick={handleDeleteAllImages}
-          className="admin-modal-confirm-button"
-        >
+        <button onClick={handleDeleteAllImages} className="admin-modal-confirm-button">
           Sí, borrar
         </button>
-        <button
-          onClick={() => setDeleteModalOpen(false)}
-          className="admin-modal-cancel-button"
-        >
+        <button onClick={() => setDeleteModalOpen(false)} className="admin-modal-cancel-button">
           Cancelar
         </button>
       </Modal>
@@ -283,16 +274,10 @@ const Admin = () => {
         className="admin-modal"
       >
         <h2>¿Importar imágenes?</h2>
-        <button
-          onClick={handleImportImages}
-          className="admin-modal-confirm-button"
-        >
+        <button onClick={handleImportImages} className="admin-modal-confirm-button">
           Sí, importar
         </button>
-        <button
-          onClick={() => setImportModalOpen(false)}
-          className="admin-modal-cancel-button"
-        >
+        <button onClick={() => setImportModalOpen(false)} className="admin-modal-cancel-button">
           Cancelar
         </button>
       </Modal>
@@ -305,16 +290,10 @@ const Admin = () => {
         <h2>
           Se borrarán imágenes y tags. Tendrás que importar nuevamente las imágenes.
         </h2>
-        <button
-          onClick={handleClearDatabase}
-          className="admin-modal-confirm-button"
-        >
+        <button onClick={handleClearDatabase} className="admin-modal-confirm-button">
           Continuar
         </button>
-        <button
-          onClick={() => setClearDbModalOpen(false)}
-          className="admin-modal-cancel-button"
-        >
+        <button onClick={() => setClearDbModalOpen(false)} className="admin-modal-cancel-button">
           Cancelar
         </button>
       </Modal>
@@ -335,16 +314,10 @@ const Admin = () => {
         ) : jobId && importStatus === "running" ? (
           <>
             <p>Estado: {importStatus}</p>
-            <button
-              onClick={handleCancelImport}
-              className="admin-modal-cancel-button"
-            >
+            <button onClick={handleCancelImport} className="admin-modal-cancel-button">
               Cancelar
             </button>
-            <button
-              onClick={() => setStatusModalOpen(false)}
-              className="admin-modal-cancel-button"
-            >
+            <button onClick={() => setStatusModalOpen(false)} className="admin-modal-cancel-button">
               Cerrar
             </button>
           </>
@@ -369,21 +342,23 @@ const Admin = () => {
         )}
       </Modal>
 
-      {/* Banner si hay job en curso */}
       {jobId && importStatus === "running" && (
         <div className="import-status-banner">
           <p>Importación en curso...</p>
         </div>
       )}
 
-      {/* Componente de estadísticas */}
       <AdminStats />
       
-      <div className="tag-components-container">
-        <TagInfo />
-        <TagChart />
+      <div className="admin-tag-components-container">
+        <div className="admin-tag-row">
+          <TagInfo refreshFlag={tagRefreshFlag} />
+          <UpdateTag onUpdate={handleTagsUpdate} />
+        </div>
+        <div className="admin-tag-row">
+          <TagChart />
+        </div>
       </div>
-
     </div>
   );
 };

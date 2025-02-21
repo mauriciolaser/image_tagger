@@ -1,4 +1,3 @@
-// src/components/TagInfo.js
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -6,11 +5,10 @@ import './TagInfo.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const TagInfo = () => {
+const TagInfo = ({ refreshFlag }) => {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Estado para controlar la columna y dirección de ordenamiento
   const [sortConfig, setSortConfig] = useState({ key: 'tag_name', direction: 'asc' });
   const navigate = useNavigate();
 
@@ -19,7 +17,6 @@ const TagInfo = () => {
       try {
         const res = await axios.get(API_URL, { params: { action: 'getTagList' } });
         if (res.data && res.data.success) {
-          // Se guarda la data sin ordenar, ya que el ordenamiento se manejará con sortConfig
           setTags(res.data.tags);
         } else {
           setError('Error al obtener los tags');
@@ -33,9 +30,8 @@ const TagInfo = () => {
     };
 
     fetchTags();
-  }, []);
+  }, [refreshFlag]);
 
-  // Función para manejar el cambio de ordenamiento
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -44,7 +40,6 @@ const TagInfo = () => {
     setSortConfig({ key, direction });
   };
 
-  // Se utiliza useMemo para memorizar el array ordenado
   const sortedTags = useMemo(() => {
     if (!tags) return [];
     let sortableTags = [...tags];

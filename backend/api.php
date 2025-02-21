@@ -59,7 +59,8 @@ $routes = [
     'addComment'     => 'handleComments.php',
     'archiveComment' => 'handleComments.php',
     'getImageStats'  => 'getImageStats.php',
-    'getTodayTaggedImages' => 'getTodayTaggedImages.php'
+    'getTodayTaggedImages' => 'getTodayTaggedImages.php',
+    'updateTag'      => 'updateTag.php'
 ];
 
 // 🆕 Agregar nuevas rutas para importación en batches

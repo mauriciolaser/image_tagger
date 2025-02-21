@@ -1,69 +1,73 @@
 /* src/components/TagInfo.css */
 
-/* ========== ESTILOS GENERALES (Desktop / pantallas >= 576px) ========== */
+/* Contenedor de la tabla */
 .tag-info-container {
   margin: 20px;
   padding: 10px;
-  width: 100%;
-  max-width: 400px; /* Ajusta según tu preferencia */
-  border: 1px solid #ccc; /* Opcional, para visualizar el contenedor */
+  width: 400px;
+  max-height: 500px;
+  border: 1px solid #ccc;
   box-sizing: border-box;
-  overflow-x: auto; /* Si la tabla excede los 400px, permite scroll horizontal en desktop */
+  overflow: hidden;
+  flex: 0 0 auto;
 }
 
+/* Título fijo */
+.tag-info-container h2 {
+  position: sticky;
+  top: 0;
+  background-color: #fff;
+  margin: 0;
+  padding: 10px;
+  height: 40px;
+  line-height: 40px;
+  z-index: 10;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Tabla con encabezado fijo */
 .tag-info-table {
   width: 100%;
-  min-width: 300px; /* Garantiza cierto ancho mínimo */
   border-collapse: collapse;
-  table-layout: auto; /* Permite a las columnas ajustarse automáticamente */
+  table-layout: fixed; /* Fija el ancho de las columnas */
 }
 
-.tag-info-table th,
-.tag-info-table td {
+/* Encabezado fijo */
+.tag-info-table thead {
+  display: block;
+  width: 100%;
+}
+
+/* Cuerpo de la tabla con scroll */
+.tag-info-table tbody {
+  display: block;
+  width: 100%;
+  max-height: calc(500px - 40px - 40px);
+  overflow-y: auto;
+}
+
+/* Ajustar ancho de columnas */
+.tag-info-table thead th,
+.tag-info-table tbody td {
+  width: 50%; /* Ajusta según el número de columnas */
   border: 1px solid #ddd;
   padding: 8px 12px;
-  vertical-align: middle;
-  white-space: normal;  /* Permite que el texto se divida en varias líneas */
-  word-wrap: break-word; /* Asegura el salto de línea si es muy largo */
+  box-sizing: border-box;
+  word-wrap: break-word;
+  text-align: left;
 }
 
-/* Estilo para la fila de encabezado */
+/* Encabezado con fondo fijo */
 .tag-info-table thead th {
   background-color: #000;
   color: #fff;
   text-align: left;
 }
 
-/* Alternar colores en las filas para facilitar la lectura */
-.tag-info-table tbody tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-.tag-info-table tbody tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-/* ========== ESTILOS PARA MOBILE (pantallas < 576px) ========== */
-@media (max-width: 576px) {
-  /* El contenedor ocupa el 80% de la altura de la pantalla y permite scroll vertical */
-  .tag-info-container {
-    height: 80vh;
-    overflow-y: auto;   /* Scroll vertical */
-    overflow-x: hidden; /* No scroll horizontal */
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 10px;
-  }
-
-  /* Se fuerza un layout fijo para que las columnas no excedan el ancho del contenedor */
-  .tag-info-table {
-    width: 100%;
-    min-width: auto; /* Quita el min-width para evitar scroll horizontal */
-    table-layout: fixed; 
-  }
-
-  .tag-info-table th,
-  .tag-info-table td {
-    white-space: normal;
-    word-wrap: break-word;
-  }
+/* Evitar desajuste de columnas entre thead y tbody */
+.tag-info-table thead,
+.tag-info-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
