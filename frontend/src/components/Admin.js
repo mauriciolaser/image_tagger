@@ -202,7 +202,7 @@ const Admin = () => {
     localStorage.removeItem('username');
     localStorage.removeItem('token');
     localStorage.removeItem('user_id');
-    window.location.href = "/login";
+    window.location.href = "/image_tagger/login";
   };
 
   return (
