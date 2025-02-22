@@ -122,6 +122,17 @@ if (!$confirm) {
     exit;
 }
 
+// Verificar si el tag antiguo y el nuevo son iguales (ignorando mayúsculas/minúsculas)
+if (strcasecmp($old_tag, $new_tag) === 0) {
+    echo json_encode([
+        "success" => true,
+        "message" => "El tag de origen y el tag de destino son iguales. No se realizaron cambios.",
+        "affected_rows" => 0
+    ]);
+    $conn->close();
+    exit;
+}
+
 /*
   Lógica de merge:
   Si el nuevo tag ya existe, se debe:
