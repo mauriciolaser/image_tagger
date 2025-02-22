@@ -87,8 +87,8 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8mb4");
 
-// Consultar cuántos tags tienen el nombre antiguo
-$stmt = $conn->prepare("SELECT COUNT(*) AS total FROM tags WHERE name = ?");
+// Consultar cuántos tags tienen el nombre antiguo (comparación exacta)
+$stmt = $conn->prepare("SELECT COUNT(*) AS total FROM tags WHERE BINARY name = ?");
 if (!$stmt) {
     http_response_code(500);
     echo json_encode(["success" => false, "message" => "Error en la preparación del SELECT: " . $conn->error]);
@@ -122,11 +122,11 @@ if (!$confirm) {
     exit;
 }
 
-// Verificar si el tag antiguo y el nuevo son iguales ignorando mayúsculas (pero respetando tildes)
-if (mb_strtolower($old_tag, 'UTF-8') === mb_strtolower($new_tag, 'UTF-8')) {
+// Si los tags son exactamente iguales (comparación sensible), no se realiza cambio
+if ($old_tag === $new_tag) {
     echo json_encode([
         "success" => true,
-        "message" => "El tag de origen y el tag de destino son iguales. No se realizaron cambios.",
+        "message" => "El tag de origen y el tag de destino son idénticos. No se realizaron cambios.",
         "affected_rows" => 0
     ]);
     $conn->close();
@@ -135,7 +135,7 @@ if (mb_strtolower($old_tag, 'UTF-8') === mb_strtolower($new_tag, 'UTF-8')) {
 
 /*
   Lógica de merge:
-  Si el nuevo tag ya existe, se debe:
+  Si el nuevo tag ya existe (comparación exacta), se debe:
    1. Obtener el id del tag nuevo.
    2. Obtener todos los ids de los tags con el nombre antiguo.
    3. Actualizar las relaciones en image_tags para cambiar el tag_id de cada uno de los tags antiguos al nuevo,
@@ -144,8 +144,8 @@ if (mb_strtolower($old_tag, 'UTF-8') === mb_strtolower($new_tag, 'UTF-8')) {
    5. Eliminar los registros de la tabla tags que tengan el nombre antiguo.
 */
 
-// Verificar si ya existe un tag con el nuevo nombre
-$stmt2 = $conn->prepare("SELECT id FROM tags WHERE name = ?");
+// Verificar si ya existe un tag con el nuevo nombre (comparación exacta)
+$stmt2 = $conn->prepare("SELECT id FROM tags WHERE BINARY name = ?");
 $stmt2->bind_param("s", $new_tag);
 $stmt2->execute();
 $new_tag_id = null;
@@ -164,8 +164,8 @@ $stmt2->close();
 if ($new_tag_id) {
     // Merge: actualizar relaciones y eliminar los tags antiguos
     
-    // Obtener todos los ids de tags con el nombre antiguo
-    $stmtOld = $conn->prepare("SELECT id FROM tags WHERE name = ?");
+    // Obtener todos los ids de tags con el nombre antiguo (comparación exacta)
+    $stmtOld = $conn->prepare("SELECT id FROM tags WHERE BINARY name = ?");
     $stmtOld->bind_param("s", $old_tag);
     $stmtOld->execute();
     $old_tag_ids = [];
@@ -249,8 +249,8 @@ if ($new_tag_id) {
     $deletedImageTags = $stmtDel->affected_rows;
     $stmtDel->close();
     
-    // Paso 3: Eliminar los registros de la tabla tags con el nombre antiguo
-    $stmtDeleteOldTags = $conn->prepare("DELETE FROM tags WHERE name = ?");
+    // Paso 3: Eliminar los registros de la tabla tags con el nombre antiguo (comparación exacta)
+    $stmtDeleteOldTags = $conn->prepare("DELETE FROM tags WHERE BINARY name = ?");
     if (!$stmtDeleteOldTags) {
         http_response_code(500);
         echo json_encode(["success" => false, "message" => "Error en la preparación del DELETE de tags: " . $conn->error]);
@@ -274,8 +274,8 @@ if ($new_tag_id) {
     ]);
     exit;
 } else {
-    // Si el nuevo tag no existe, simplemente actualizar el nombre del tag antiguo en todos los registros
-    $stmtUpd = $conn->prepare("UPDATE tags SET name = ? WHERE name = ?");
+    // Si el nuevo tag no existe, simplemente actualizar el nombre del tag antiguo en todos los registros (comparación exacta)
+    $stmtUpd = $conn->prepare("UPDATE tags SET name = ? WHERE BINARY name = ?");
     $stmtUpd->bind_param("ss", $new_tag, $old_tag);
     if (!$stmtUpd->execute()) {
         http_response_code(500);
