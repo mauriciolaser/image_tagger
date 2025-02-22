@@ -122,8 +122,8 @@ if (!$confirm) {
     exit;
 }
 
-// Verificar si el tag antiguo y el nuevo son iguales (ignorando mayúsculas/minúsculas)
-if (strcasecmp($old_tag, $new_tag) === 0) {
+// Verificar si el tag antiguo y el nuevo son iguales ignorando mayúsculas (pero respetando tildes)
+if (mb_strtolower($old_tag, 'UTF-8') === mb_strtolower($new_tag, 'UTF-8')) {
     echo json_encode([
         "success" => true,
         "message" => "El tag de origen y el tag de destino son iguales. No se realizaron cambios.",
