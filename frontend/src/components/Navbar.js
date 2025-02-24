@@ -28,26 +28,31 @@ const Navbar = () => {
 
       {/* Lista de navegación */}
       <ul className={`nav-list ${menuOpen ? 'expanded' : ''}`}>
+
+      <li className="nav-item">
+          <Link to="/tag" className="nav-link" onClick={toggleMenu}>
+            Taggear
+          </Link>
+        </li>
+        
         <li className="nav-item">
           <Link to="/gallery" className="nav-link" onClick={toggleMenu}>
             Galería
           </Link>
         </li>
-        <li className="nav-item">
-          <Link to="/tag" className="nav-link" onClick={toggleMenu}>
-            Taggear
-          </Link>
-        </li>
+
         <li className="nav-item">
           <Link to="/image-upload" className="nav-link" onClick={toggleMenu}>
             Upload
           </Link>
         </li>
+
         <li className="nav-item">
           <Link to="/admin" className="nav-link" onClick={toggleMenu}>
             Admin
           </Link>
         </li>
+        
       </ul>
     </nav>
   );

@@ -212,22 +212,53 @@ const Tags = () => {
     }
   };
 
-  // Filtrado local (incluye/excluye tags)
-  const matchIncludedExcluded = (tags) => {
-    const tagNames = tags.map(t => t.name.toLowerCase());
-    for (let inc of includedTags) {
-      if (!tagNames.includes(inc.toLowerCase())) return false;
-    }
-    for (let exc of excludedTags) {
-      if (tagNames.includes(exc.toLowerCase())) return false;
-    }
-    return true;
-  };
+  // Función de filtrado para modos "with" y para aplicar tags incluidos/excluidos
+  // Si se han seleccionado tags incluidos, se dividirán en:
+  // - Exact Matches: imagen que contenga TODOS los tags incluidos
+  // - Partial Matches: imagen que contenga al menos UNO de los tags incluidos (pero no todos)
+  let exactMatches = [];
+  let partialMatches = [];
+  // Cuando estamos en modo "with", y además se ha definido al menos un tag incluido,
+  // aplicamos el filtrado dividiendo en dos grupos.
+  if (!searchMode && filter === "with" && includedTags.length > 0) {
+    const lowerExcluded = excludedTags.map(tag => tag.toLowerCase());
+    const lowerIncluded = includedTags.map(tag => tag.toLowerCase());
+    // Primero se filtran todas las imágenes que tengan al menos un tag y NO contengan tags excluidos
+    const imagesWithTags = displayedImages.filter(image => {
+      const tags = imageTagsMap[image.id] || [];
+      if (tags.length === 0) return false;
+      const tagNames = tags.map(t => t.name.toLowerCase());
+      // Si contiene algún tag excluido, se descarta
+      if (lowerExcluded.some(exc => tagNames.includes(exc))) return false;
+      return true;
+    });
+    // Ahora se dividen en exactas y parciales
+    exactMatches = imagesWithTags.filter(image => {
+      const tags = imageTagsMap[image.id] || [];
+      const tagNames = tags.map(t => t.name.toLowerCase());
+      return lowerIncluded.every(tag => tagNames.includes(tag));
+    });
+    partialMatches = imagesWithTags.filter(image => {
+      const tags = imageTagsMap[image.id] || [];
+      const tagNames = tags.map(t => t.name.toLowerCase());
+      const count = lowerIncluded.filter(tag => tagNames.includes(tag)).length;
+      return count > 0 && count < lowerIncluded.length;
+    });
+  }
 
+  // Para otros modos, usamos el filtrado original (incluyendo/excluyendo) para imágenes con tags
   const filteredImages = displayedImages.filter((image) => {
     const tags = imageTagsMap[image.id] || [];
     if (filter === "with") {
-      return tags.length > 0 && matchIncludedExcluded(tags);
+      // Si no se han seleccionado tags incluidos, se muestran todas las imágenes que tengan al menos un tag
+      if (includedTags.length === 0) {
+        return tags.length > 0 && (() => {
+          const tagNames = tags.map(t => t.name.toLowerCase());
+          return excludedTags.every(exc => !tagNames.includes(exc.toLowerCase()));
+        })();
+      }
+      // Cuando se hayan seleccionado tags, el filtrado se hace en las variables exactMatches y partialMatches
+      return false;
     } else if (filter === "without") {
       return tags.length === 0;
     } else if (filter === "all") {
@@ -338,7 +369,7 @@ const Tags = () => {
       );
 
       const successCount = responses.filter(
-        res => res && res.data && (res.data.success == true || res.data.success == 1)
+        res => res && res.data && (res.data.success === true || res.data.success === 1)
       ).length;
 
       if (successCount > 0) {
@@ -592,7 +623,7 @@ const Tags = () => {
             {filter === "all" && (
               <p>Mostrando {filteredImages.length} del total de {stats.total} imágenes</p>
             )}
-            {filter === "with" && (
+            {filter === "with" && includedTags.length === 0 && (
               <p>Mostrando {filteredImages.length} del total de {stats.with_tags} imágenes con tags</p>
             )}
             {filter === "without" && (
@@ -692,24 +723,69 @@ const Tags = () => {
               </div>
             ) : (
               <>
-                <div className="tag-images-grid">
-                  {filteredImages.map((image) => (
-                    <div
-                      key={image.id}
-                      className="tag-thumbnail"
-                      onClick={() => handleSelectImage(image)}
-                    >
-                      <img
-                        src={getImageUrl(image.filename)}
-                        alt={image.original_name || image.filename}
-                        className="tag-thumbnail-img"
-                      />
-                      <p className="tag-thumbnail-label">
-                        {image.original_name || image.filename}
-                      </p>
+                {/* Si estamos en modo "Con Tags" y se han seleccionado tags incluidos, se dividen los resultados */}
+                {filter === "with" && includedTags.length > 0 ? (
+                  <>
+                    <h3>Resultados Exactos</h3>
+                    <div className="tag-images-grid">
+                      {exactMatches.length > 0 ? exactMatches.map((image) => (
+                        <div
+                          key={image.id}
+                          className="tag-thumbnail"
+                          onClick={() => handleSelectImage(image)}
+                        >
+                          <img
+                            src={getImageUrl(image.filename)}
+                            alt={image.original_name || image.filename}
+                            className="tag-thumbnail-img"
+                          />
+                          <p className="tag-thumbnail-label">
+                            {image.original_name || image.filename}
+                          </p>
+                        </div>
+                      )) : <p style={{ margin: '20px auto' }}>No se encontraron resultados exactos.</p>}
                     </div>
-                  ))}
-                </div>
+                    <h3>Resultados con al menos un tag</h3>
+                    <div className="tag-images-grid">
+                      {partialMatches.length > 0 ? partialMatches.map((image) => (
+                        <div
+                          key={image.id}
+                          className="tag-thumbnail"
+                          onClick={() => handleSelectImage(image)}
+                        >
+                          <img
+                            src={getImageUrl(image.filename)}
+                            alt={image.original_name || image.filename}
+                            className="tag-thumbnail-img"
+                          />
+                          <p className="tag-thumbnail-label">
+                            {image.original_name || image.filename}
+                          </p>
+                        </div>
+                      )) : <p style={{ margin: '20px auto' }}>No se encontraron resultados parciales.</p>}
+                    </div>
+                  </>
+                ) : (
+                  // Para otros modos o cuando no se han seleccionado tags incluidos, se muestra la grilla normal
+                  <div className="tag-images-grid">
+                    {filteredImages.map((image) => (
+                      <div
+                        key={image.id}
+                        className="tag-thumbnail"
+                        onClick={() => handleSelectImage(image)}
+                      >
+                        <img
+                          src={getImageUrl(image.filename)}
+                          alt={image.original_name || image.filename}
+                          className="tag-thumbnail-img"
+                        />
+                        <p className="tag-thumbnail-label">
+                          {image.original_name || image.filename}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {allImages.length >= currentPage * imagesPerPage && (
                   <div className="tag-load-more">
                     <button className="tag-load-more-button" onClick={loadMoreImages}>
@@ -738,21 +814,21 @@ const Tags = () => {
 
             {/* Contenedor para alinear y espaciar el botón */}
             <div className="archive-button-container">
-  <ArchiveButton
-    selectedImage={selectedImage}
-    setAllImages={setAllImages}
-    setSelectedImage={setSelectedImage}
-    API_URL={API_URL}
-  />
-  <RefreshTag 
-    onRefresh={() => {
-      // Se refrescan tanto los tags propios como los de otros
-      fetchImageTags(selectedImage.id);
-      fetchOtherImageTags(selectedImage.id);
-    }}
-    loading={loadingTags}
-  />
-</div>           
+              <ArchiveButton
+                selectedImage={selectedImage}
+                setAllImages={setAllImages}
+                setSelectedImage={setSelectedImage}
+                API_URL={API_URL}
+              />
+              <RefreshTag 
+                onRefresh={() => {
+                  // Se refrescan tanto los tags propios como los de otros
+                  fetchImageTags(selectedImage.id);
+                  fetchOtherImageTags(selectedImage.id);
+                }}
+                loading={loadingTags}
+              />
+            </div>
 
             <div className="tag-management">
               <div className="tag-list-container">
@@ -793,17 +869,17 @@ const Tags = () => {
                       <p className="tag-empty-message">Cargando tags...</p>
                     ) : selectedImageOtherTags.length > 0 ? (
                       <ul className="tag-list">
-{selectedImageOtherTags.map((tag) => (
-  <li key={tag.id} className="tag-list-item">
-    <span>{tag.name}</span>
-    <button 
-      className="tag-delete-button" 
-      onClick={() => handleTagDelete(tag.id, tag.name)}
-    >
-      ✕
-    </button>
-  </li>
-))}
+                        {selectedImageOtherTags.map((tag) => (
+                          <li key={tag.id} className="tag-list-item">
+                            <span>{tag.name}</span>
+                            <button 
+                              className="tag-delete-button" 
+                              onClick={() => handleTagDelete(tag.id, tag.name)}
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
                       </ul>
                     ) : (
                       <p className="tag-empty-message">No hay tags de otros usuarios.</p>
