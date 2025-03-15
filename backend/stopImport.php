@@ -17,13 +17,10 @@ if ($conn->connect_error) {
     exit(json_encode(["success" => false, "message" => "Error de conexión a BD"]));
 }
 
-$job_id = filter_input(INPUT_GET, 'job_id', FILTER_VALIDATE_INT);
-if (!$job_id) {
-    http_response_code(400);
-    exit(json_encode(["success" => false, "message" => "Job ID inválido"]));
-}
+$conn->query("UPDATE import_jobs SET status = 'stopped'");
 
-$conn->query("UPDATE import_jobs SET status = 'stopped' WHERE id = $job_id");
+// Borrar todo el contenido de la tabla import_image_queue
+$conn->query("DELETE FROM import_image_queue");
 
 http_response_code(200);
 exit(json_encode(["success" => true, "message" => "Importación detenida"]));

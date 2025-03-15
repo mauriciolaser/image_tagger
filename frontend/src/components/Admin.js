@@ -5,24 +5,21 @@ import Modal from 'react-modal';
 import TagInfo from './TagInfo';
 import TagChart from './TagChart';
 import UpdateTag from './UpdateTag';
-import axios from 'axios';
-
-// Importamos estilos
 import './Admin.css';
-
-// Importamos las funciones del servicio
+// Importamos las funciones del servicio, incluyendo las nuevas para detener actualización
 import {
   getImportStatus,
   deleteAllImages,
   startImport,
   stopImport,
-  clearDatabase
+  clearDatabase,
+  startUpdate,
+  getUpdateStatus,
+  stopUpdate
 } from '../services/adminService';
 
-// Importamos nuestro UserCard
+// Importamos nuestro UserCard y estadísticas
 import UserCard from './UserCard';
-
-// Importamos el componente de estadísticas
 import AdminStats from './AdminStats';
 
 Modal.setAppElement('#root');
@@ -40,22 +37,27 @@ const Admin = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [clearDbLoading, setClearDbLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
 
   // Estados de modals
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [clearDbModalOpen, setClearDbModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [doomsdayModalOpen, setDoomsdayModalOpen] = useState(false);
+  const [doomsdayCommand, setDoomsdayCommand] = useState("");
 
-  // Mensajes y estado de import
+  // Estados para mensajes y jobs
   const [modalMessage, setModalMessage] = useState('');
   const [jobId, setJobId] = useState(null);
   const [importStatus, setImportStatus] = useState('');
+  const [updateJobId, setUpdateJobId] = useState(null);
+  const [updateStatus, setUpdateStatus] = useState('');
 
   // Estado para refrescar la lista de tags
   const [tagRefreshFlag, setTagRefreshFlag] = useState(false);
 
-  // Al montar, leemos username y userId de localStorage
+  // Al montar, obtenemos username y userId de localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) setLoggedUser(storedUser);
@@ -64,7 +66,7 @@ const Admin = () => {
     if (storedUserId) setUserId(storedUserId);
   }, []);
 
-  // Monitoreamos la importación en curso (si jobId existe)
+  // Monitoreo de la importación en curso
   useEffect(() => {
     let interval;
     if (jobId) {
@@ -90,29 +92,35 @@ const Admin = () => {
     return () => clearInterval(interval);
   }, [jobId]);
 
+  // Monitoreo de la actualización en curso
+  useEffect(() => {
+    let interval;
+    if (updateJobId) {
+      interval = setInterval(async () => {
+        try {
+          const response = await getUpdateStatus(updateJobId);
+          if (response.data.success) {
+            setUpdateStatus(response.data.status);
+            if (
+              response.data.status === "completed" ||
+              response.data.status === "stopped"
+            ) {
+              clearInterval(interval);
+              setUpdateJobId(null);
+              setModalMessage("Actualización de metadata completada.");
+            }
+          }
+        } catch (error) {
+          console.error("Error consultando estado de actualización:", error);
+        }
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [updateJobId]);
+
   // Función para refrescar la lista de tags (toggle)
   const handleTagsUpdate = () => {
     setTagRefreshFlag(prev => !prev);
-  };
-
-  // Botón "Borrar todas las imágenes" (Nuke database)
-  const handleDeleteAllImages = async () => {
-    if (loggedUser !== 'admin') return;
-    setDeleteLoading(true);
-    try {
-      const response = await deleteAllImages();
-      setModalMessage(
-        response.data.success
-          ? "Se borraron todas las imágenes."
-          : "Error al borrar imágenes."
-      );
-    } catch (error) {
-      setModalMessage("Error al borrar imágenes.");
-    } finally {
-      setDeleteLoading(false);
-      setDeleteModalOpen(false);
-      setStatusModalOpen(true);
-    }
   };
 
   // Botón "Exportar"
@@ -123,7 +131,7 @@ const Admin = () => {
       return;
     }
     window.open(
-      `${process.env.REACT_APP_API_URL}?action=exportImages&user_id=${userId}`,
+      `${API_URL}?action=exportImages&user_id=${userId}`,
       '_blank'
     );
   };
@@ -159,7 +167,35 @@ const Admin = () => {
     }
   };
 
-  // Botón "Cancelar Import"
+  // Botón "Actualizar Metadata"
+  const handleUpdateMetadata = async () => {
+    if (loggedUser !== 'admin') return;
+    if (!userId) {
+      setModalMessage("No se encontró user_id en localStorage.");
+      setStatusModalOpen(true);
+      return;
+    }
+    try {
+      setUpdateLoading(true);
+      const response = await startUpdate(userId);
+      if (response.data.success) {
+        setUpdateJobId(response.data.job_id);
+        setUpdateStatus("running");
+        setModalMessage("La actualización de metadata ha comenzado. Puedes cerrar esta ventana");
+        setStatusModalOpen(true);
+      } else {
+        setModalMessage(response.data.message || "Error al iniciar la actualización.");
+        setStatusModalOpen(true);
+      }
+    } catch (error) {
+      setModalMessage("Error al actualizar metadata.");
+      setStatusModalOpen(true);
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  // Botón "Stop Import"
   const handleCancelImport = async () => {
     if (!jobId) return;
     try {
@@ -177,8 +213,66 @@ const Admin = () => {
     }
   };
 
-  // Botón "Limpiar Database"
-  const handleClearDatabase = async () => {
+  // Botón "Stop Update"
+  const handleCancelUpdate = async () => {
+    if (!updateJobId) return;
+    try {
+      const response = await stopUpdate(updateJobId);
+      if (response.data.success) {
+        setUpdateStatus("stopped");
+        setModalMessage("Actualización detenida.");
+      } else {
+        setModalMessage("Error deteniendo la actualización.");
+      }
+    } catch (error) {
+      setModalMessage("Error deteniendo la actualización.");
+    } finally {
+      setStatusModalOpen(true);
+    }
+  };
+
+  // Botón "Cerrar sesión"
+  const handleLogout = () => {
+    localStorage.removeItem('username');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
+    window.location.href = "/image_tagger/login";
+  };
+
+  // Funciones para Doomsday (Nuke y Clear Database)
+  const handleDoomsday = () => {
+    setDoomsdayCommand("");
+    setDoomsdayModalOpen(true);
+  };
+
+  const confirmDoomsdayNuke = async () => {
+    if (doomsdayCommand !== "confirm_doomsday") {
+      setModalMessage("Comando incorrecto. Debe escribir 'confirm_doomsday'");
+      return;
+    }
+    if (loggedUser !== 'admin') return;
+    setDeleteLoading(true);
+    try {
+      const response = await deleteAllImages();
+      setModalMessage(
+        response.data.success
+          ? "Se borraron todas las imágenes."
+          : "Error al borrar imágenes."
+      );
+    } catch (error) {
+      setModalMessage("Error al borrar imágenes.");
+    } finally {
+      setDeleteLoading(false);
+      setDoomsdayModalOpen(false);
+      setStatusModalOpen(true);
+    }
+  };
+
+  const confirmDoomsdayClear = async () => {
+    if (doomsdayCommand !== "confirm_doomsday") {
+      setModalMessage("Comando incorrecto. Debe escribir 'confirm_doomsday'");
+      return;
+    }
     if (loggedUser !== 'admin') return;
     setClearDbLoading(true);
     try {
@@ -192,17 +286,9 @@ const Admin = () => {
       setModalMessage("Error al limpiar la base de datos.");
     } finally {
       setClearDbLoading(false);
-      setClearDbModalOpen(false);
+      setDoomsdayModalOpen(false);
       setStatusModalOpen(true);
     }
-  };
-
-  // Botón "Cerrar sesión"
-  const handleLogout = () => {
-    localStorage.removeItem('username');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_id');
-    window.location.href = "/image_tagger/login";
   };
 
   return (
@@ -211,41 +297,44 @@ const Admin = () => {
         <h2>Admin</h2>
       </div>
 
-      <UserCard userId={userId} username={loggedUser} />
+      <div className="admin-userstats-container">
+  <UserCard userId={userId} username={loggedUser} />
+  <AdminStats />
+</div>
 
       <div className="admin-buttons">
-        {loggedUser === 'admin' && (
-          <button
-            onClick={() => setDeleteModalOpen(true)}
-            disabled={deleteLoading}
-            className="delete-button"
-          >
-            {deleteLoading ? "Borrando..." : "Nuke database ☢️"}
-          </button>
-        )}
         <button
           onClick={handleExport}
-          disabled={deleteLoading || importLoading}
+          disabled={deleteLoading || importLoading || updateLoading}
           className="export-button"
         >
           Exportar
         </button>
         {loggedUser === 'admin' && (
-          <button
-            onClick={() => setImportModalOpen(true)}
-            disabled={importLoading || jobId}
-            className="import-button"
-          >
-            {importLoading ? "Importando..." : "Importar imágenes"}
-          </button>
+          <>
+            <button
+              onClick={() => setImportModalOpen(true)}
+              disabled={importLoading || jobId}
+              className="import-button"
+            >
+              {importLoading ? "Importando..." : "Importar imágenes"}
+            </button>
+            <button
+              onClick={handleUpdateMetadata}
+              disabled={updateLoading || updateJobId}
+              className="update-button"
+            >
+              {updateLoading ? "Actualizando..." : "Actualizar Metadata"}
+            </button>
+          </>
         )}
         {loggedUser === 'admin' && (
           <button
-            onClick={() => setClearDbModalOpen(true)}
-            disabled={clearDbLoading}
-            className="clear-db-button"
+            onClick={handleDoomsday}
+            disabled={clearDbLoading || deleteLoading}
+            className="doomsday-button"
           >
-            {clearDbLoading ? "Limpiando..." : "Limpiar Database"}
+            Doomsday
           </button>
         )}
         <button onClick={handleLogout} className="logout-button">
@@ -253,21 +342,59 @@ const Admin = () => {
         </button>
       </div>
 
-      {/* Modales de confirmación y estado */}
+      {/* Botones para detener jobs en ejecución */}
+      <div className="admin-buttons">
+        {loggedUser === 'admin' && jobId && (
+          <button
+            onClick={handleCancelImport}
+            disabled={importLoading}
+            className="cancel-import-button"
+          >
+            Stop Import
+          </button>
+        )}
+        {loggedUser === 'admin' && updateJobId && (
+          <button
+            onClick={handleCancelUpdate}
+            disabled={updateLoading}
+            className="cancel-update-button"
+          >
+            Stop Update
+          </button>
+        )}
+      </div>
+
+      {/* Modal para Doomsday */}
       <Modal
-        isOpen={deleteModalOpen}
-        onRequestClose={() => setDeleteModalOpen(false)}
+        isOpen={doomsdayModalOpen}
+        onRequestClose={() => setDoomsdayModalOpen(false)}
         className="admin-modal"
       >
-        <h2>¿Borrar todas las imágenes?</h2>
-        <button onClick={handleDeleteAllImages} className="admin-modal-confirm-button">
-          Sí, borrar
-        </button>
-        <button onClick={() => setDeleteModalOpen(false)} className="admin-modal-cancel-button">
+        <h2>Doomsday</h2>
+        <p>
+          Para confirmar, escriba el comando: <strong>confirm_doomsday</strong>
+        </p>
+        <input
+          type="text"
+          value={doomsdayCommand}
+          onChange={(e) => setDoomsdayCommand(e.target.value)}
+          placeholder="Escribe confirm_doomsday"
+          style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+        />
+        <div>
+          <button onClick={confirmDoomsdayNuke} className="admin-modal-confirm-button">
+            Nuke Database
+          </button>
+          <button onClick={confirmDoomsdayClear} className="admin-modal-confirm-button">
+            Limpiar Database
+          </button>
+        </div>
+        <button onClick={() => setDoomsdayModalOpen(false)} className="admin-modal-cancel-button">
           Cancelar
         </button>
       </Modal>
 
+      {/* Modal para importar imágenes */}
       <Modal
         isOpen={importModalOpen}
         onRequestClose={() => setImportModalOpen(false)}
@@ -282,40 +409,28 @@ const Admin = () => {
         </button>
       </Modal>
 
-      <Modal
-        isOpen={clearDbModalOpen}
-        onRequestClose={() => setClearDbModalOpen(false)}
-        className="admin-modal"
-      >
-        <h2>
-          Se borrarán imágenes y tags. Tendrás que importar nuevamente las imágenes.
-        </h2>
-        <button onClick={handleClearDatabase} className="admin-modal-confirm-button">
-          Continuar
-        </button>
-        <button onClick={() => setClearDbModalOpen(false)} className="admin-modal-cancel-button">
-          Cancelar
-        </button>
-      </Modal>
-
+      {/* Modal para mostrar estado y mensajes */}
       <Modal
         isOpen={statusModalOpen}
         onRequestClose={() => setStatusModalOpen(false)}
         className="admin-modal"
       >
         <h2>{modalMessage}</h2>
-        {modalMessage === "La importación ha comenzado. Puedes cerrar esta ventana" ? (
-          <button
-            onClick={() => setStatusModalOpen(false)}
-            className="admin-modal-confirm-button"
-          >
-            Continuar
-          </button>
-        ) : jobId && importStatus === "running" ? (
+        {jobId && importStatus === "running" ? (
           <>
-            <p>Estado: {importStatus}</p>
+            <p>Estado import: {importStatus}</p>
             <button onClick={handleCancelImport} className="admin-modal-cancel-button">
-              Cancelar
+              Cancelar Import
+            </button>
+            <button onClick={() => setStatusModalOpen(false)} className="admin-modal-cancel-button">
+              Cerrar
+            </button>
+          </>
+        ) : updateJobId && updateStatus === "running" ? (
+          <>
+            <p>Estado update: {updateStatus}</p>
+            <button onClick={handleCancelUpdate} className="admin-modal-cancel-button">
+              Cancelar Update
             </button>
             <button onClick={() => setStatusModalOpen(false)} className="admin-modal-cancel-button">
               Cerrar
@@ -330,6 +445,7 @@ const Admin = () => {
                 modalMessage === "Error al borrar imágenes." ||
                 modalMessage === "Base de datos limpia exitosamente." ||
                 modalMessage === "Importación completada." ||
+                modalMessage === "Actualización de metadata completada." ||
                 modalMessage.includes("Se han borrado los registros de imágenes")
               ) {
                 navigate('/gallery');
@@ -342,14 +458,6 @@ const Admin = () => {
         )}
       </Modal>
 
-      {jobId && importStatus === "running" && (
-        <div className="import-status-banner">
-          <p>Importación en curso...</p>
-        </div>
-      )}
-
-      <AdminStats />
-      
       <div className="admin-tag-components-container">
         <div className="admin-tag-row">
           <TagInfo refreshFlag={tagRefreshFlag} />

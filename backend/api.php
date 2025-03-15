@@ -70,7 +70,13 @@ $batchImportRoutes = [
     'importStatus'   => 'importStatus.php'
 ];
 
-$routes = array_merge($routes, $batchImportRoutes);
+$updateRoutes = [
+    'startUpdate'  => 'startUpdate.php',
+    'stopUpdate'  => 'stopUpdate.php',
+    'updateStatus' => 'updateStatus.php',     
+];
+
+$routes = array_merge($routes, $batchImportRoutes, $updateRoutes);
 
 // Validar acción
 if (isset($routes[$action])) {

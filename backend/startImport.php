@@ -1,11 +1,9 @@
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Configurar logs de errores
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/import_errors.log');
+error_reporting(E_ALL);
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -49,9 +47,7 @@ if ($checkStmt->num_rows > 0) {
     $checkStmt->bind_result($existing_job_id, $existing_status);
     $checkStmt->fetch();
     $checkStmt->close();
-
     error_log("Ya hay un job en proceso con ID: $existing_job_id y estado: $existing_status");
-    
     http_response_code(400);
     exit(json_encode(["success" => false, "message" => "Ya hay un job en proceso ($existing_status)."]));
 }
@@ -68,7 +64,7 @@ if (!$sourceDir || !is_dir($sourceDir)) {
 $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
 // Escanear archivos en el directorio
-$files = array_diff(scandir($sourceDir), ['.', '..']); // Excluye "." y ".."
+$files = array_diff(scandir($sourceDir), ['.', '..']);
 
 if (empty($files)) {
     http_response_code(400);
@@ -84,54 +80,40 @@ try {
     if (!$stmt) {
         throw new Exception("Error preparando consulta import_jobs: " . $conn->error);
     }
-
     $stmt->bind_param("i", $user_id);
     if (!$stmt->execute()) {
         throw new Exception("Error ejecutando consulta import_jobs: " . $stmt->error);
     }
-
     $job_id = $stmt->insert_id;
     $stmt->close();
-
-    // Validar que `$job_id` es válido
     if (!$job_id) {
         throw new Exception("Error: No se pudo obtener `job_id` después de insertar.");
     }
 
-    // Insertar imágenes en `image_queue` (se agrega la columna job_id)
-    $insertStmt = $conn->prepare("INSERT INTO image_queue (job_id, filename, status) VALUES (?, ?, 'pending')");
+    // Insertar imágenes en la cola de importación (tabla import_image_queue)
+    $insertStmt = $conn->prepare("INSERT INTO import_image_queue (job_id, filename, status) VALUES (?, ?, 'pending')");
     if (!$insertStmt) {
-        throw new Exception("Error preparando consulta image_queue: " . $conn->error);
+        throw new Exception("Error preparando consulta import_image_queue: " . $conn->error);
     }
-
     $insertedCount = 0;
     foreach ($files as $file) {
         $filePath = $sourceDir . '/' . $file;
-
-        // Verificar que es un archivo válido
         if (!is_file($filePath)) {
             continue;
         }
-
-        // Validar la extensión del archivo
         $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
         if (!in_array($extension, $allowedExtensions)) {
             continue;
         }
-
-        // Evitar duplicados en `image_queue` (solo por filename)
-        $checkStmt = $conn->prepare("SELECT COUNT(*) FROM image_queue WHERE filename = ?");
+        $checkStmt = $conn->prepare("SELECT COUNT(*) FROM import_image_queue WHERE filename = ?");
         $checkStmt->bind_param("s", $file);
         $checkStmt->execute();
         $checkStmt->bind_result($count);
         $checkStmt->fetch();
         $checkStmt->close();
-
         if ($count > 0) {
             continue;
         }
-
-        // Insertar en la cola
         $insertStmt->bind_param("is", $job_id, $file);
         if ($insertStmt->execute()) {
             $insertedCount++;
@@ -139,15 +121,11 @@ try {
     }
     $insertStmt->close();
 
-    // Si no se insertó ninguna imagen, marcar el `import_job` como `completed`
     if ($insertedCount === 0) {
         $conn->query("UPDATE import_jobs SET status = 'completed' WHERE id = $job_id");
         throw new Exception("Todas las imágenes ya estaban en la cola o no había imágenes válidas.");
     }
-
-    // Confirmar la transacción
     $conn->commit();
-
 } catch (Exception $e) {
     $conn->rollback();
     error_log("Error en `startImport.php`: " . $e->getMessage());
@@ -155,22 +133,48 @@ try {
     exit(json_encode(["success" => false, "message" => $e->getMessage()]));
 }
 
-// Verificar si el archivo `process_queue.php` existe antes de ejecutarlo
-$processScript = __DIR__ . "/process_queue.php";
+// Verificar si el archivo `process_import_queue.php` existe antes de ejecutarlo
+$processScript = __DIR__ . "/process_import_queue.php";
 if (!file_exists($processScript)) {
     http_response_code(500);
-    exit(json_encode(["success" => false, "message" => "Archivo `process_queue.php` no encontrado"]));
+    exit(json_encode(["success" => false, "message" => "Archivo `process_import_queue.php` no encontrado"]));
 }
 
-// Ejecutar el proceso en segundo plano (asegúrate de que `exec` esté permitido)
-exec("php $processScript $job_id > /dev/null 2>&1 &", $output, $return_var);
+// Determinar el ejecutable de PHP según el sistema y capturar el PID en Linux
+if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+    $phpExecutable = 'C:\xampp\php\php.exe';
+    $cmd = "start /B $phpExecutable $processScript $job_id > NUL 2>&1";
+} else {
+    // Usar el PHP 8.1 del sistema ubicado en /usr/local/bin/php
+    $phpExecutable = '/usr/local/bin/php';
+    // Se añade "echo $!" para capturar el PID del proceso en segundo plano
+    $cmd = "$phpExecutable $processScript $job_id > /dev/null 2>&1 & echo \$!";
+}
+
+exec($cmd, $output, $return_var);
+error_log("CMD executed: " . $cmd);
+error_log("Output: " . print_r($output, true));
+error_log("Return var: " . $return_var);
 
 if ($return_var !== 0) {
     http_response_code(500);
     exit(json_encode(["success" => false, "message" => "Error al ejecutar el proceso en segundo plano"]));
 }
 
-// Responder con éxito
+// En Linux, capturamos y guardamos el PID en un archivo .pid
+if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN' && !empty($output[0])) {
+    $pid = trim($output[0]);
+    // Suponiendo que la ruta para guardar los PIDs esté definida en una variable de entorno o similar.
+    // Si no está definida, se puede definir aquí directamente.
+    $pidDir = __DIR__ . '/pids';
+    if (!is_dir($pidDir)) {
+        mkdir($pidDir, 0777, true);
+    }
+    $pidFile = $pidDir . '/import_' . $job_id . '.pid';
+    file_put_contents($pidFile, $pid);
+    error_log("Proceso en segundo plano iniciado con PID: " . $pid);
+}
+
 http_response_code(200);
 exit(json_encode(["success" => true, "job_id" => $job_id, "added_images" => $insertedCount]));
 ?>

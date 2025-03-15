@@ -6,3 +6,5 @@
 /admin-panel/node_modules
 /admin-panel/.env.production
 /test
+/backend/logs
+/logs

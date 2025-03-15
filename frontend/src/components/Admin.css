@@ -17,16 +17,53 @@
   font-size: 0.95em;
 }
 
-/* Botones principales */
+/* Contenedor para UserCard y AdminStats */
+.admin-userstats-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  width: 50%;
+}
+
+/* Cada componente dentro del contenedor ocupará cerca del 45% del ancho, con un mínimo */
+.admin-userstats-container > * {
+  flex: 1 1 45%;
+  min-width: 300px;
+}
+
+/* En dispositivos móviles se apilan */
+@media screen and (max-width: 768px) {
+  .admin-userstats-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .admin-userstats-container > * {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+}
+
+/* Botones principales: centrados horizontal y verticalmente */
 .admin-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 30px;
+  margin: 1rem 0 30px;
+  justify-content: center;
+  align-items: center;
 }
 
 .admin-buttons button {
-  padding: 10px 20px;
+  height: 50px;
+  line-height: 1;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  padding: 0 20px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -34,6 +71,7 @@
   transition: background-color 0.2s ease;
 }
 
+/* Botón para borrar (Nuke Database) */
 .delete-button {
   background-color: #e74c3c;
   color: #fff;
@@ -42,6 +80,7 @@
   background-color: #c0392b;
 }
 
+/* Botón Exportar */
 .export-button {
   background-color: #3498db;
   color: #fff;
@@ -50,6 +89,7 @@
   background-color: #2980b9;
 }
 
+/* Botón Importar Imágenes */
 .import-button {
   background-color: #27ae60;
   color: #fff;
@@ -58,6 +98,25 @@
   background-color: #1e8449;
 }
 
+/* Botón para actualizar metadata (tono morado) */
+.update-button {
+  background-color: #9b59b6;
+  color: #fff;
+}
+.update-button:hover {
+  background-color: #8e44ad;
+}
+
+/* Botón para Doomsday */
+.doomsday-button {
+  background-color: #34495e;
+  color: #fff;
+}
+.doomsday-button:hover {
+  background-color: #2c3e50;
+}
+
+/* Botón para limpiar la base de datos */
 .clear-db-button {
   background-color: #8e44ad;
   color: #fff;
@@ -66,6 +125,7 @@
   background-color: #71368a;
 }
 
+/* Botón para Cerrar sesión */
 .logout-button {
   background-color: #95a5a6;
   color: #fff;
@@ -114,6 +174,15 @@
   border-radius: 4px;
 }
 
+/* Banner para actualización de metadata */
+.update-status-banner {
+  background-color: #9b59b6;
+  color: white;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
 /* Contenedor principal para TagInfo, UpdateTag y TagChart */
 .admin-tag-components-container {
   display: flex;
@@ -133,7 +202,7 @@
   margin-bottom: 20px;
 }
 
-/* Ajustes responsivos */
+/* Ajustes responsivos para TagInfo, UpdateTag y TagChart */
 @media screen and (max-width: 1280px) {
   .admin-tag-components-container {
     flex-direction: column;
