@@ -75,6 +75,9 @@ const Tags = () => {
   // MODIFICACIÓN: Usar useLocation para leer parámetros de la URL
   const location = useLocation();
 
+  // NUEVO: Estado para el filtro de ciudad en modo "Sin Tags"
+  const [cityFilter, setCityFilter] = useState("Todas");
+
   // Al montar, obtener userId
   useEffect(() => {
     const storedUserId = localStorage.getItem('user_id');
@@ -126,6 +129,12 @@ const Tags = () => {
   useEffect(() => {
     setDisplayedImages(allImages.slice(0, currentPage * imagesPerPage));
   }, [allImages, currentPage]);
+
+  // Al cambiar el filtro o la ciudad, reiniciamos la paginación y actualizamos la vista
+  useEffect(() => {
+    setCurrentPage(1);
+    setDisplayedImages(allImages.slice(0, imagesPerPage));
+  }, [filter, cityFilter]);
 
   // Cada vez que se muestren imágenes nuevas, solicitar sus tags
   useEffect(() => {
@@ -218,21 +227,16 @@ const Tags = () => {
   // - Partial Matches: imagen que contenga al menos UNO de los tags incluidos (pero no todos)
   let exactMatches = [];
   let partialMatches = [];
-  // Cuando estamos en modo "with", y además se ha definido al menos un tag incluido,
-  // aplicamos el filtrado dividiendo en dos grupos.
   if (!searchMode && filter === "with" && includedTags.length > 0) {
     const lowerExcluded = excludedTags.map(tag => tag.toLowerCase());
     const lowerIncluded = includedTags.map(tag => tag.toLowerCase());
-    // Primero se filtran todas las imágenes que tengan al menos un tag y NO contengan tags excluidos
     const imagesWithTags = displayedImages.filter(image => {
       const tags = imageTagsMap[image.id] || [];
       if (tags.length === 0) return false;
       const tagNames = tags.map(t => t.name.toLowerCase());
-      // Si contiene algún tag excluido, se descarta
       if (lowerExcluded.some(exc => tagNames.includes(exc))) return false;
       return true;
     });
-    // Ahora se dividen en exactas y parciales
     exactMatches = imagesWithTags.filter(image => {
       const tags = imageTagsMap[image.id] || [];
       const tagNames = tags.map(t => t.name.toLowerCase());
@@ -246,18 +250,22 @@ const Tags = () => {
     });
   }
 
-  // Para otros modos, usamos el filtrado original (incluyendo/excluyendo) para imágenes con tags
+  // Modificación: Aplicar el filtro de ciudad en todos los modos
   const filteredImages = displayedImages.filter((image) => {
+    // Filtro de ciudad siempre activo (si no es "Todas")
+    if (cityFilter !== "Todas") {
+      if (!image.city || image.city.toLowerCase() !== cityFilter.toLowerCase()) {
+        return false;
+      }
+    }
     const tags = imageTagsMap[image.id] || [];
     if (filter === "with") {
-      // Si no se han seleccionado tags incluidos, se muestran todas las imágenes que tengan al menos un tag
       if (includedTags.length === 0) {
         return tags.length > 0 && (() => {
           const tagNames = tags.map(t => t.name.toLowerCase());
           return excludedTags.every(exc => !tagNames.includes(exc.toLowerCase()));
         })();
       }
-      // Cuando se hayan seleccionado tags, el filtrado se hace en las variables exactMatches y partialMatches
       return false;
     } else if (filter === "without") {
       return tags.length === 0;
@@ -518,7 +526,6 @@ const Tags = () => {
       });
       if (response.data.success && response.data.images.length > 0) {
         setSearchedImageObj(response.data.images[0]);
-        // Opcional: mostrar mensaje no bloqueante de éxito
         setTagSubmitStatus({ message: "Imagen encontrada.", type: "success" });
       } else {
         setSearchedImageObj(null);
@@ -615,9 +622,21 @@ const Tags = () => {
           >
             Sin Tags
           </button>
+          {/* Desplegable de filtro de ciudad siempre visible (cuando no se está en modo búsqueda) */}
+          {!searchMode && (
+            <select
+              className="tag-component-city-select"
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+            >
+              <option value="Todas">Todas</option>
+              <option value="Barcelona">Barcelona</option>
+              <option value="Tampere">Tampere</option>
+            </select>
+          )}
         </div>
 
-        {/* Renderizado de stats encima de la grilla, según la pestaña */}
+        {/* Renderizado de stats */}
         {!searchMode && stats && (
           <div className="tag-stats">
             {filter === "all" && (
@@ -723,7 +742,6 @@ const Tags = () => {
               </div>
             ) : (
               <>
-                {/* Si estamos en modo "Con Tags" y se han seleccionado tags incluidos, se dividen los resultados */}
                 {filter === "with" && includedTags.length > 0 ? (
                   <>
                     <h3>Resultados Exactos</h3>
@@ -766,7 +784,6 @@ const Tags = () => {
                     </div>
                   </>
                 ) : (
-                  // Para otros modos o cuando no se han seleccionado tags incluidos, se muestra la grilla normal
                   <div className="tag-images-grid">
                     {filteredImages.map((image) => (
                       <div
@@ -804,7 +821,10 @@ const Tags = () => {
         <div className="tag-preview-section">
           <div className="tag-preview-container">
             <h3>Imagen Seleccionada</h3>
-            <p>{selectedImage.original_name || selectedImage.filename}</p>
+            <p>
+              {selectedImage.original_name || selectedImage.filename}
+              {selectedImage.city && ` (${selectedImage.city})`}
+            </p>
             <img
               src={getImageUrl(selectedImage.filename)}
               alt={selectedImage.original_name || selectedImage.filename}
@@ -812,7 +832,6 @@ const Tags = () => {
               onClick={() => setIsFullScreen(true)}
             />
 
-            {/* Contenedor para alinear y espaciar el botón */}
             <div className="archive-button-container">
               <ArchiveButton
                 selectedImage={selectedImage}
@@ -822,7 +841,6 @@ const Tags = () => {
               />
               <RefreshTag 
                 onRefresh={() => {
-                  // Se refrescan tanto los tags propios como los de otros
                   fetchImageTags(selectedImage.id);
                   fetchOtherImageTags(selectedImage.id);
                 }}
@@ -904,7 +922,6 @@ const Tags = () => {
               </div>
             </div>
 
-            {/* Agregamos el componente de comentarios */}
             <CommentSection selectedImage={selectedImage} API_URL={API_URL} />
           </div>
         </div>
@@ -944,7 +961,7 @@ const Tags = () => {
         </div>
       )}
 
-      {/* Modal grande (se usa solo cuando ocurre un error en búsqueda o en operaciones críticas) */}
+      {/* Modal grande */}
       {modalOpen && (
         <Modal
           isOpen={modalOpen}
@@ -963,7 +980,7 @@ const Tags = () => {
         </Modal>
       )}
 
-      {/* Mensaje no bloqueante (modal inferior) */}
+      {/* Mensaje no bloqueante */}
       {tagSubmitStatus && (
         <div style={{
           position: 'fixed',

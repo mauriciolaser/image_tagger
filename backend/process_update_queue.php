@@ -96,11 +96,13 @@ flush();
 $conn->query("UPDATE update_jobs SET status = 'running' WHERE id = $job_id");
 my_log("DEBUG: update_jobs: Estado actualizado a 'running' para job_id: $job_id");
 
+// Variables para el procesamiento por lotes y control de inactividad
 $batchSize = 10;
-$inactivityTimeout = 600; // 10 minutos
-$lastFoundTime = time();
+$maxNoPendingIterations = 30; // Por ejemplo, 30 iteraciones (cada 2 segundos = 60 segundos de inactividad)
+$noPendingIterations = 0;
 
 while (true) {
+    // Verificar el estado del job
     $result = $conn->query("SELECT status FROM update_jobs WHERE id = $job_id");
     if ($result->num_rows === 0 || $result->fetch_assoc()['status'] === 'stopped') {
         my_log("INFO: Proceso de update detenido manualmente o job no existe.");
@@ -116,9 +118,17 @@ while (true) {
     ");
     
     if ($result->num_rows === 0) {
-        my_log("INFO: No hay más registros de actualización pendientes. Reintentando...");
+        $noPendingIterations++;
+        my_log("INFO: No hay más registros de actualización pendientes. Iteración sin pendientes: $noPendingIterations");
+        if ($noPendingIterations >= $maxNoPendingIterations) {
+            my_log("INFO: Se alcanzó el tiempo máximo de inactividad. Finalizando proceso.");
+            break;
+        }
         sleep(2);
         continue;
+    } else {
+        // Reiniciar el contador de inactividad si se encuentran registros
+        $noPendingIterations = 0;
     }
     
     while ($row = $result->fetch_assoc()) {

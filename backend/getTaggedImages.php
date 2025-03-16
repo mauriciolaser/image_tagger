@@ -41,7 +41,7 @@ if ($withTagsParam === '1') {
     // INNER JOIN con image_tags para traer solo las que tienen al menos 1 tag
     // Usamos GROUP BY i.id para evitar duplicados si la imagen tiene varios tags
     $sql = "
-        SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        SELECT i.id, i.filename, i.original_name, i.uploaded_at, i.city
         FROM images i
         INNER JOIN image_tags it ON i.id = it.image_id
         WHERE i.archived = ?
@@ -56,7 +56,7 @@ if ($withTagsParam === '1') {
     // *** Imágenes SIN tags ***
     // LEFT JOIN + it.image_id IS NULL para traer solo las que no tienen registros en image_tags
     $sql = "
-        SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        SELECT i.id, i.filename, i.original_name, i.uploaded_at, i.city
         FROM images i
         LEFT JOIN image_tags it ON i.id = it.image_id
         WHERE i.archived = ?
@@ -70,7 +70,7 @@ if ($withTagsParam === '1') {
 } else {
     // *** Lógica por defecto: TODAS las imágenes (archived=?)
     $sql = "
-        SELECT i.id, i.filename, i.original_name, i.uploaded_at
+        SELECT i.id, i.filename, i.original_name, i.uploaded_at, i.city
         FROM images i
         WHERE i.archived = ?
         ORDER BY i.id DESC

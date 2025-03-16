@@ -22,9 +22,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Parámetros de paginación:
-// - page: número de página (por defecto 1)
-// - limit: cantidad de imágenes a obtener (por defecto 500; en cargas posteriores se puede usar 500)
+// Parámetros de paginación: page y limit
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
 $offset = ($page - 1) * $limit;
@@ -32,25 +30,26 @@ $offset = ($page - 1) * $limit;
 // Parámetro seed para un orden determinista (si no se envía, se genera uno)
 $seed = isset($_GET['seed']) ? $_GET['seed'] : time();
 
-// Obtener imágenes aleatorias de forma determinista para evitar duplicados
+// Parámetro city, por defecto "barcelona"
+$city = isset($_GET['city']) ? $_GET['city'] : 'barcelona';
+
+// Obtener imágenes de forma determinista y filtrando por city
 $sql = "SELECT id, filename, original_name, uploaded_at 
         FROM images 
-        WHERE archived = 0 
+        WHERE archived = 0 AND city = ?
         ORDER BY MD5(CONCAT(?, id))
-        LIMIT $offset, $limit";
+        LIMIT ?, ?";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $seed);
+$stmt->bind_param("ssii", $city, $seed, $offset, $limit);
 $stmt->execute();
 $result = $stmt->get_result();
 
 $images = [];
-$publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
+$publicUrlBase = rtrim($_ENV['PUBLIC_URL_BASE'], '/');
 
 while ($row = $result->fetch_assoc()) {
-    $row['public_url'] = rtrim($publicUrlBase, '/')
-        . '/api/index.php?action=getImage&file='
-        . urlencode($row['filename']);
+    $row['public_url'] = $publicUrlBase . '/api/index.php?action=getImage&file=' . urlencode($row['filename']);
     $images[] = $row;
 }
 

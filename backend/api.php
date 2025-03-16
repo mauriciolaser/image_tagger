@@ -72,6 +72,7 @@ $batchImportRoutes = [
 
 $updateRoutes = [
     'startUpdate'  => 'startUpdate.php',
+    'startUpdateCity' => 'startUpdateCity.php',
     'stopUpdate'  => 'stopUpdate.php',
     'updateStatus' => 'updateStatus.php',     
 ];

@@ -1,0 +1,24 @@
+[15-Mar-2025 18:32:33 UTC] DEBUG: Iniciando startUpdate.php
+[15-Mar-2025 18:33:01 UTC] CMD ejecutado: /usr/local/bin/lsphp /home/vallhzty/image_tagger/process_update_queue.php 1 > /dev/null 2>&1 &
+[15-Mar-2025 18:33:01 UTC] Output: Array
+(
+)
+
+[15-Mar-2025 18:33:01 UTC] Return var: 0
+[15-Mar-2025 18:45:56 UTC] DEBUG: Iniciando startUpdate.php
+[15-Mar-2025 18:45:56 UTC] Ya hay un update job en proceso con ID: 1 y estado: pending
+[15-Mar-2025 18:46:37 UTC] DEBUG: Iniciando startUpdate.php
+[15-Mar-2025 18:46:56 UTC] CMD ejecutado: /usr/local/bin/lsphp /home/vallhzty/image_tagger/process_update_queue.php 2 > /dev/null 2>&1 &
+[15-Mar-2025 18:46:56 UTC] Output: Array
+(
+)
+
+[15-Mar-2025 18:46:56 UTC] Return var: 0
+[15-Mar-2025 18:59:07 UTC] DEBUG: Iniciando startUpdate.php
+[15-Mar-2025 18:59:26 UTC] CMD ejecutado: /usr/local/bin/lsphp /home/vallhzty/image_tagger/process_update_queue.php 3 > /dev/null 2>&1 &
+[15-Mar-2025 18:59:26 UTC] Output: Array
+(
+)
+
+[15-Mar-2025 18:59:26 UTC] Return var: 0
+[15-Mar-2025 18:59:26 UTC] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 7.2.5". You are running 5.6.40. in /home/vallhzty/image_tagger/vendor/composer/platform_check.php on line 25

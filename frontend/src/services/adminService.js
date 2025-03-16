@@ -1,7 +1,6 @@
 // src/services/adminService.js
 import axios from 'axios';
 
-// URL base de la API
 const API_URL = process.env.REACT_APP_API_URL;
 
 /**
@@ -28,11 +27,6 @@ export const stopImport = (jobId) => {
   return axios.post(`${API_URL}?action=stopImport`, { job_id: jobId });
 };
 
-export const stopUpdate = (jobId) => {
-  return axios.post(`${API_URL}?action=stopUpdate`, { job_id: jobId });
-};
-
-
 /**
  * Consulta el estado de un proceso de actualización de metadata.
  * @param {string} jobId Identificador del proceso de actualización.
@@ -47,6 +41,23 @@ export function getUpdateStatus(jobId) {
  */
 export function startUpdate(userId) {
   return axios.get(`${API_URL}?action=startUpdate&user_id=${userId}`);
+}
+
+/**
+ * Detiene la actualización de metadata.
+ * @param {string} jobId Identificador del proceso de actualización.
+ */
+export const stopUpdate = (jobId) => {
+  return axios.post(`${API_URL}?action=stopUpdate`, { job_id: jobId });
+};
+
+/**
+ * Inicia la actualización de metadata para una ciudad específica.
+ * @param {string} userId Identificador del usuario.
+ * @param {string} cityKey Llave de la ciudad (ej.: esp_bar_, fin_tam_, fin_hel_, ale_ber_).
+ */
+export function startUpdateCity(userId, cityKey) {
+  return axios.get(`${API_URL}?action=startUpdateCity&user_id=${userId}&city=${cityKey}`);
 }
 
 /**

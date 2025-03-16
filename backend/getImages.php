@@ -29,8 +29,8 @@ $publicUrlBase = $_ENV['PUBLIC_URL_BASE'];
  */
 $filenameParam = isset($_GET['filename']) ? trim($_GET['filename']) : '';
 if (!empty($filenameParam)) {
-    // Consulta exacta por filename
-    $sql = "SELECT id, filename, original_name, archived, uploaded_at
+    // Consulta exacta por filename, incluyendo el valor de city
+    $sql = "SELECT id, filename, original_name, archived, uploaded_at, city
             FROM images
             WHERE filename = ?
             LIMIT 1";
@@ -80,12 +80,10 @@ if (!empty($excludeIdsParam)) {
 if ($withTagsParam === '1') {
     // --> SOLO imágenes CON tags
     // Usamos un INNER JOIN con image_tags para que vengan sólo las que tienen al menos 1 tag
-    // Podrías usar GROUP BY i.id si una imagen tiene múltiples tags.
-    
     if (!empty($excludeIdsArray)) {
         // Existen exclude_ids
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at, i.city
                 FROM images i
                 INNER JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -100,7 +98,7 @@ if ($withTagsParam === '1') {
         $stmt->bind_param($types, ...$bindValues);
     } else {
         // Sin exclude_ids
-        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at, i.city
                 FROM images i
                 INNER JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -114,10 +112,9 @@ if ($withTagsParam === '1') {
 } elseif ($withTagsParam === '0') {
     // --> SOLO imágenes SIN tags
     // Usamos un LEFT JOIN con image_tags y pedimos las que NO tienen relación.
-    
     if (!empty($excludeIdsArray)) {
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at, i.city
                 FROM images i
                 LEFT JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -131,7 +128,7 @@ if ($withTagsParam === '1') {
         $bindValues = array_merge([$archivedParam], $excludeIdsArray);
         $stmt->bind_param($types, ...$bindValues);
     } else {
-        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at
+        $sql = "SELECT i.id, i.filename, i.original_name, i.archived, i.uploaded_at, i.city
                 FROM images i
                 LEFT JOIN image_tags it ON i.id = it.image_id
                 WHERE i.archived = ?
@@ -146,7 +143,7 @@ if ($withTagsParam === '1') {
     // --> Lógica vieja: TODAS las imágenes, con archived=? y limit=500
     if (!empty($excludeIdsArray)) {
         $placeholders = implode(',', array_fill(0, count($excludeIdsArray), '?'));
-        $sql = "SELECT id, filename, original_name, archived, uploaded_at
+        $sql = "SELECT id, filename, original_name, archived, uploaded_at, city
                 FROM images
                 WHERE archived = ?
                   AND id NOT IN ($placeholders)
@@ -158,7 +155,7 @@ if ($withTagsParam === '1') {
         $bindValues = array_merge([$archivedParam], $excludeIdsArray);
         $stmt->bind_param($types, ...$bindValues);
     } else {
-        $sql = "SELECT id, filename, original_name, archived, uploaded_at
+        $sql = "SELECT id, filename, original_name, archived, uploaded_at, city
                 FROM images
                 WHERE archived = ?
                 ORDER BY RAND()

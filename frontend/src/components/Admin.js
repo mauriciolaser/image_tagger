@@ -15,7 +15,8 @@ import {
   clearDatabase,
   startUpdate,
   getUpdateStatus,
-  stopUpdate
+  stopUpdate,
+  startUpdateCity  // Nueva función para actualización por ciudad
 } from '../services/adminService';
 
 // Importamos nuestro UserCard y estadísticas
@@ -56,6 +57,10 @@ const Admin = () => {
 
   // Estado para refrescar la lista de tags
   const [tagRefreshFlag, setTagRefreshFlag] = useState(false);
+
+  // Nuevo: Estado para seleccionar el filtro de actualización de metadata
+  // Las opciones serán: "todas", "barcelona", "tampere", "helsinki" y "berlin"
+  const [updateCity, setUpdateCity] = useState("todas");
 
   // Al montar, obtenemos username y userId de localStorage
   useEffect(() => {
@@ -167,7 +172,7 @@ const Admin = () => {
     }
   };
 
-  // Botón "Actualizar Metadata"
+  // Botón "Actualizar Metadata" (ahora con selector)
   const handleUpdateMetadata = async () => {
     if (loggedUser !== 'admin') return;
     if (!userId) {
@@ -177,7 +182,14 @@ const Admin = () => {
     }
     try {
       setUpdateLoading(true);
-      const response = await startUpdate(userId);
+      let response;
+      // Si el selector está en "todas", usamos startUpdate; de lo contrario, startUpdateCity
+      if (updateCity === "todas") {
+        response = await startUpdate(userId);
+      } else {
+        // El valor de updateCity ya debe coincidir con la llave correspondiente
+        response = await startUpdateCity(userId, updateCity);
+      }
       if (response.data.success) {
         setUpdateJobId(response.data.job_id);
         setUpdateStatus("running");
@@ -298,9 +310,9 @@ const Admin = () => {
       </div>
 
       <div className="admin-userstats-container">
-  <UserCard userId={userId} username={loggedUser} />
-  <AdminStats />
-</div>
+        <UserCard userId={userId} username={loggedUser} />
+        <AdminStats />
+      </div>
 
       <div className="admin-buttons">
         <button
@@ -318,13 +330,6 @@ const Admin = () => {
               className="import-button"
             >
               {importLoading ? "Importando..." : "Importar imágenes"}
-            </button>
-            <button
-              onClick={handleUpdateMetadata}
-              disabled={updateLoading || updateJobId}
-              className="update-button"
-            >
-              {updateLoading ? "Actualizando..." : "Actualizar Metadata"}
             </button>
           </>
         )}
@@ -457,6 +462,30 @@ const Admin = () => {
           </button>
         )}
       </Modal>
+
+      {/* Nueva fila para "Actualizar Metadata" y selector de ciudad */}
+      {loggedUser === 'admin' && (
+        <div className="admin-update-container">
+          <button
+            onClick={handleUpdateMetadata}
+            disabled={updateLoading || updateJobId}
+            className="update-button"
+          >
+            {updateLoading ? "Actualizando..." : "Actualizar Metadata"}
+          </button>
+          <select
+            className="admin-update-select"
+            value={updateCity}
+            onChange={(e) => setUpdateCity(e.target.value)}
+          >
+            <option value="todas">Todas</option>
+            <option value="esp_bar_">Barcelona</option>
+            <option value="fin_tam_">Tampere</option>
+            <option value="fin_hel_">Helsinki</option>
+            <option value="ale_ber_">Berlin</option>
+          </select>
+        </div>
+      )}
 
       <div className="admin-tag-components-container">
         <div className="admin-tag-row">
