@@ -306,7 +306,7 @@ const Admin = () => {
   return (
     <div className="admin-container">
       <div className="admin-header">
-        <h2>Admin</h2>
+        <h2>Dashboard</h2>
       </div>
 
       <div className="admin-userstats-container">

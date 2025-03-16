@@ -36,7 +36,7 @@ function App() {
                 <Routes>
                   <Route path="/gallery" element={<GalleryPage />} />
                   <Route path="/tag" element={<TagPage />} />
-                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/dashboard" element={<AdminPage />} />
                   <Route path="/image-upload" element={<UploadPage />} />
                 </Routes>
               </ProtectedRoute>

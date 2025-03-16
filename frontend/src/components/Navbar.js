@@ -42,14 +42,8 @@ const Navbar = () => {
         </li>
 
         <li className="nav-item">
-          <Link to="/image-upload" className="nav-link" onClick={toggleMenu}>
-            Upload
-          </Link>
-        </li>
-
-        <li className="nav-item">
-          <Link to="/admin" className="nav-link" onClick={toggleMenu}>
-            Admin
+          <Link to="/dashboard" className="nav-link" onClick={toggleMenu}>
+            Dashboard
           </Link>
         </li>
         
